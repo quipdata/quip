@@ -4,3 +4,4 @@ http.createServer(function(req,res) {
    res.writeHead(200, {'Content-Type':'http'});
    res.end('Hello Azure');
 }).listen(port);
+console.log("Server running");
