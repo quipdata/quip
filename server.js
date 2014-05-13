@@ -26,8 +26,23 @@ connection.end();
 
 var http = require('http')
 var port = process.env.PORT || 1337;
+
 http.createServer(function(req,res) {
-   res.writeHead(200, {'Content-Type':'text/html'});
-   res.end('Hello Azure. Database response was: ' + sqlResponse);
+	var path = req.url.replace(/\/?(?:\?.*)?$/, '').toLowerCase();
+
+	switch (path) {
+		case '':
+			res.writeHead(200,{'Content-Type':'text/html'});
+			res.end('Homepage. SQL response was: ' + sqlResponse);
+			break;
+		case '/about':
+			res.writeHead(200,{'Content-Type':'text/html'});
+			res.end('About');
+			break;
+		default:
+			res.writeHead(404,{'Content-Type':'text/html'});
+			res.end('Not found');
+	}
 }).listen(port);
+
 console.log("Server running at port " + port);
