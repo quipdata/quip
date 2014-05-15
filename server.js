@@ -1,4 +1,19 @@
 var mysql = require('mysql');
+var fs = require('fs');
+
+// read in password data for our database, and figure out later how to make it
+// play well with the async model
+var pass = [];
+fs.readFile('./password.dat', 'utf-8', function(err,data) {
+      if (err) {
+         return console.log(err);
+      } else {
+         data = data.replace(/(\r\n|\n|\r)/gm,"").split(',');
+         pass = data;
+      }
+   });
+// get above to play well with async model
+
 var connection = mysql.createConnection({
 	host: 'us-cdbr-azure-west-a.cloudapp.net',
 	user: 'bee741e5969e8c',
@@ -26,7 +41,6 @@ connection.end();
 
 
 var http = require('http');
-var fs = require('fs');
 var port = process.env.PORT || 1337;
 
 function serveStaticFile(res, path, contentType, responseCode) {
