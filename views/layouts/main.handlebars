@@ -2,10 +2,33 @@
 <html>
 <head>
    <title>QuipData</title>
+   {{! Test script check and loader. Also loads Jquery }}
+   {{#if showTests}}
+   	<link rel="stylesheet" href="/vendor/mocha.css">
+   {{/if}}
+   <script src="http://code.jquery.com/jquery-2.0.2.min.js"></script>
+   {{! End of test script check and loader }}
 </head>
 <body>
 	<header><img src="/img/Penguins2.jpg" alt="QuipData Logo"></header>
    {{{body}}}
+
+   {{! Test boilerplate; loads global tests. Also page tests, if they exist }}
+   {{#if showTests}}
+   	<div id="mocha"></div>
+   	<script src="/vendor/mocha.js"></script>
+   	<script src="/vendor/chai.js"></script>
+   	<script>
+   		mocha.ui('tdd');
+   		var assert = chai.assert;
+   	</script>
+   	<script src="/qa/tests-global.js"></script>
+   	{{#if pageTestScript}}
+   		<script src="{{pageTestScript}}"></script>
+   	{{/if}}
+   	<script>mocha.run();</script>
+   {{/if}}
+   {{! End of test boilerplate }}
 </body>
 <footer>
 <p>

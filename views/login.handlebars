@@ -1,0 +1,38 @@
+<h1>Login</h1>
+<p>
+Currently under testing and construction
+
+{{! action is the web page that'll process this POST message when it's sent }}
+<form action="/process?test=hello" method="POST">
+	{{! name is the only field the server sees, I think }}
+	<input type="hidden" name="hush" val="hidden, but not secret">
+	<div>
+		<label for="fieldName">Name: </label>
+		<input type="text" id="fieldName" name="name">
+	</div>
+	<div>
+		<button type="submit">Submit</button>
+	</div>
+</form>
+</p>
+<script>
+	$('#formTest').on('submit', function(evt) {
+		evt.preventDefault();
+		var action = $(this).attr('action');
+		var $container = $(this).closest('.formContainer');
+		$.ajax({
+			url: action,
+			type: 'POST',
+			success: function(data) {
+				if(data.success) {
+					$container.html('Thank you!');
+				} else {
+					$container.html('There was a problem.');
+				}
+			}
+			error: function() {
+				$container.html('There was a problem');
+			}
+		});
+	});
+</script>
