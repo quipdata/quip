@@ -3,14 +3,19 @@
 <head>
    <title>QuipData</title>
    {{! Test script check and loader. Also loads Jquery }}
-   {{#if showTests}}
-   	<link rel="stylesheet" href="/vendor/mocha.css">
-   {{/if}}
-   <script src="http://code.jquery.com/jquery-2.0.2.min.js"></script>
+   <!--<script src="http://code.jquery.com/jquery-2.0.2.min.js"></script>-->
    {{! End of test script check and loader }}
 </head>
 <body>
-	<header><img src="/img/Penguins2.jpg" alt="QuipData Logo"></header>
+	<header>
+   {{#if loggedIn}}
+   You are logged in as {{name}}
+   {{else}}
+   You are not logged in. <a href="/login">Login</a> <a href="/register">Register</a>
+   {{/if}}
+   <br><br>
+   <a href="/"><img src="/img/quipdata.png" alt="QuipData Logo"></a>
+   </header>
    {{{body}}}
 
    {{! Test boilerplate; loads global tests. Also page tests, if they exist }}

@@ -3,18 +3,22 @@
 Currently under testing and construction
 
 {{! action is the web page that'll process this POST message when it's sent }}
-<form action="/process?test=hello" method="POST">
+<form action="/process" method="POST">
 	{{! name is the only field the server sees, I think }}
-	<input type="hidden" name="hush" val="hidden, but not secret">
 	<div>
-		<label for="fieldName">Name: </label>
+		<label for="fieldName">Username: </label>
 		<input type="text" id="fieldName" name="name">
+	<br>
+		<label for="fieldPass">Password: </label>
+		<input type="password" id="fieldPass" name="pass">
 	</div>
 	<div>
 		<button type="submit">Submit</button>
 	</div>
 </form>
 </p>
+
+<!-- For later
 <script>
 	$('#formTest').on('submit', function(evt) {
 		evt.preventDefault();
@@ -36,3 +40,4 @@ Currently under testing and construction
 		});
 	});
 </script>
+-->
