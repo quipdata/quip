@@ -84,16 +84,6 @@ app.use(function(req,res,next) {
 app.use(express.static(__dirname + '/public'));
 app.use('/', router);
 
-// The code below here starts the server if it's run directly (i.e. node server.js)
-// or exports the startServer() function if it's a require('server.js')
-function startServer() {
-	http.createServer(app).listen(app.get('port'), function() {
-		console.log('Express started at ' + app.get('port') + '; press Ctrl-C to terminate.');
-	});
-}
-
-if (require.main === module) {
-	startServer();
-} else {
-	module.exports = startServer;
-}
+http.createServer(app).listen(app.get('port'), function() {
+	console.log('Express started at ' + app.get('port') + '; press Ctrl-C to terminate.');
+});
