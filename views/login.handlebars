@@ -2,8 +2,8 @@
 <p>
 Currently under testing and construction
 
-{{! action is the web page that'll process this POST message when it's sent }}
-<form action="/process" method="POST">
+{{! action is the route that'll process this POST message when it's sent }}
+<form action="/login" method="POST">
 	{{! name is the only field the server sees, I think }}
 	<div>
 		<label for="fieldName">Username: </label>
@@ -17,27 +17,3 @@ Currently under testing and construction
 	</div>
 </form>
 </p>
-
-<!-- For later
-<script>
-	$('#formTest').on('submit', function(evt) {
-		evt.preventDefault();
-		var action = $(this).attr('action');
-		var $container = $(this).closest('.formContainer');
-		$.ajax({
-			url: action,
-			type: 'POST',
-			success: function(data) {
-				if(data.success) {
-					$container.html('Thank you!');
-				} else {
-					$container.html('There was a problem.');
-				}
-			}
-			error: function() {
-				$container.html('There was a problem');
-			}
-		});
-	});
-</script>
--->

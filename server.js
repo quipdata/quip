@@ -1,16 +1,23 @@
 // server.js
 
 // basic setup
-var express = require('express');
-var http = require('http');
-var app = express();
-var bodyParser = require('body-parser');
-var cookieParser = require('cookie-parser');
-var session = require('cookie-session');
-var port = process.env.PORT || 1337;
+var express = require('express'); // webserver
+var http = require('http');	// node
+var bodyParser = require('body-parser'); // for POST and JSON
+var cookieParser = require('cookie-parser'); // parses cookies
+var session = require('cookie-session'); // sets up cookie-based sessions
+var addrs = require('email-addresses'); // verifies emails as valid format
+var app = express();		// main server loop
+var port = process.env.PORT || 1337;  // port to listen on
 // imports from my modules
-var fortune = require('./lib/fortune.js');
-var signedIn = false;
+var fortune = require('./lib/fortune.js'); // light amusing script for testing
+var SQL = require('./lib/sql.js'); // provides interface for SQL events
+var mail = require('./lib/mail.js');
+// Globals for modules
+// Don't remove this! The other SQL commands will still work, but they'll be
+// creating new connections as they do so, rapidly filling the connection queue
+var command = new SQL.Command();
+command.start();
 // handlebars is our current view engine, and res.render calls will be routed
 // to the handlebars engine
 var handlebars = require('express3-handlebars').create({defaultLayout:'main'});
@@ -20,9 +27,7 @@ app.set('view engine','handlebars');
 
 app.set('port', port );
 app.use(cookieParser('warp5oh'));
-app.use(session({
-	keys: ['guest', 'user']
-}));
+app.use(session({ secret: 'sessionNow'}));
 
 // The default router
 var router = express.Router();
@@ -31,8 +36,94 @@ router.get('/', function(req,res) {
 	res.render('home');
 });
 
+router.get('/adminLogout', function(req,res) {
+	command.end();
+	res.redirect(302, '/');
+});
+
+// note that router.get handles GET requests and
+// router.post handles POST requests.
 router.get('/login', function(req,res) {
 	res.render('login');
+});
+
+router.post('/login', function(req,res) {
+	if(req.xhr || req.accepts('json')==='json') {
+		// req.body is where the json will be
+		res.cookie('userLogin', req.body.name, {signed:true, httpOnly:true});
+		res.redirect(302, '/');
+	} else {
+		res.send('Failed to login.');
+	}
+});
+
+router.get('/logout', function(req,res) {
+	res.clearCookie('userLogin');
+	res.redirect(302, '/');
+});
+
+router.get('/register', function(req,res) {
+	res.render('register');
+});
+
+router.post('/register', function(req,res) {
+	if (req.xhr || req.accepts('json')==='json') {
+		var address;
+		if (addrs.parseOneAddress(req.body.user_email)) {
+			address = addrs.parseOneAddress(req.body.user_email).address;
+		}
+		if (!address) {
+			res.render('register', {
+				err: "You must enter a valid email address."
+			});
+		} else if (!req.body.user_password) {
+			res.render('register', {
+				err: "You must enter a password."
+			});
+		} else if (!req.body.user_nickname) {
+			res.render('register', {
+				err: "You need to enter a nickname."
+			});
+		} else {
+			var register = new SQL.Register(address, req.body.user_password,
+				req.body.user_first_name, req.body.user_last_name,
+				req.body.user_organization, req.body.user_nickname);
+
+			register.on('error', function(error) {
+				console.log("Error: " + error);
+				res.redirect('/', 302);
+			});
+			register.on('failure', function(error) {
+				res.render('register', {
+					err: error
+				});
+			});
+			register.on('success', function(data) {
+				data = "Click this link to finish registration: http://" + data;
+				mail.sendMail(address, data);
+				res.redirect('/success', 302);
+			});
+			register.perform();
+		}
+	} else {
+		res.send('We cannot process your registration at this time.');
+	}
+});
+
+router.get('/sql', function(req,res) {
+	var login = new SQL.Login('test','pointless');
+	login.on('error', function (error) {
+		console.log("An error occured");
+		res.redirect('/', 302);
+	});
+	login.on('failure', function(reason) {
+		console.log("Failed to retrieve SQL response");
+		res.redirect('/', 302);
+	});
+	login.on('success', function(data) {
+		res.send("Got: " + data);
+	});
+	login.perform();
 });
 
 // Here we see an example of templating in action - we swap our getFortune for
@@ -45,22 +136,16 @@ router.get('/about', function(req,res) {
 	});
 });
 
+// Replace this with a proper success view
+router.get('/success', function(req, res) {
+	res.send("Please check your email for verification.");
+});
+
 // A way to see the headers data that is sent by the browser to the server
 router.get('/headers', function(req,res) {
 	var s = '';
 	for (var name in req.headers) s += name + ": " + req.headers[name] + '<p>';
 		res.send(s);
-});
-
-router.post('/process', function(req,res) {
-	if(req.xhr || req.accepts('json')==='json') {
-		// req.body is where the json will be
-		res.cookie('loginName', req.body.name, {signed:true});
-		signedIn = true;
-		res.send(req.body.name + " " + req.body.pass);
-	} else {
-		res.send('Failure');
-	}
 });
 
 router.use(function(req,res,next){
@@ -74,13 +159,17 @@ app.use(bodyParser());
 // This activates our test scripts when ?test=1 is at the end of the base url
 app.use(function(req, res, next) {
 	res.locals.showTests = app.get('env') !== 'production' && req.query.test === '1';
-	res.locals.name = req.signedCookies.loginName;
 	next();
 });
+
 app.use(function(req,res,next) {
-	res.locals.loggedIn = signedIn;
+	res.locals.name = req.signedCookies.userLogin;
+	if (res.locals.name) {
+		res.locals.loggedIn = true;
+	}
 	next();
 });
+
 app.use(express.static(__dirname + '/public'));
 app.use('/', router);
 

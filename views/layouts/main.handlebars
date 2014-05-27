@@ -9,10 +9,12 @@
 <body>
 	<header>
    {{#if loggedIn}}
-   You are logged in as {{name}}
+   You are logged in as {{name}}. <a href="/logout">Logout</a>
    {{else}}
    You are not logged in. <a href="/login">Login</a> <a href="/register">Register</a>
    {{/if}}
+   <br>
+   <a href="/adminLogout">Admin Logout</a>
    <br><br>
    <a href="/"><img src="/img/quipdata.png" alt="QuipData Logo"></a>
    </header>
