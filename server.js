@@ -101,7 +101,7 @@ router.post('/register', function(req,res) {
 			register.on('success', function(data) {
 				var response;
 				response = "Click this link to finish registration: ";
-				response = response + "http://quiptest.azurewebsites.net/verify?" + data;
+				response = response + "http://localhost:1337/verify?" + data;
 				mail.sendMail(address, response);
 				res.redirect('/success', 302);
 			});
@@ -165,8 +165,9 @@ router.get('/verify', function(req, res) {
 			res.send("Success! :" + data);
 		});
 		verify.perform();
+	} else {
+		res.send("Oops.");
 	}
-	res.redirect('/', 302);
 });
 
 router.use(function(req,res,next){
