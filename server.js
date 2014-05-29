@@ -99,8 +99,10 @@ router.post('/register', function(req,res) {
 				});
 			});
 			register.on('success', function(data) {
-				data = "Click this link to finish registration: http://" + data;
-				mail.sendMail(address, data);
+				var response;
+				response = "Click this link to finish registration: ";
+				response = response + "http://quiptest.azurewebsites.net/verify?" + data;
+				mail.sendMail(address, response);
 				res.redirect('/success', 302);
 			});
 			register.perform();
@@ -146,6 +148,25 @@ router.get('/headers', function(req,res) {
 	var s = '';
 	for (var name in req.headers) s += name + ": " + req.headers[name] + '<p>';
 		res.send(s);
+});
+
+router.get('/verify', function(req, res) {
+	if ( req.query.email && req.query.validate ) {
+		var verify = new SQL.Verify(req.query.email, req.query.validate);
+		verify.on('error', function (error) {
+			console.log("An error occured.");
+			res.redirect('/', 302);
+		});
+		verify.on('failure', function(reason) {
+			console.log("Failure at: " + reason);
+			res.redirect('/', 302);
+		});
+		verify.on('success', function(data) {
+			res.send("Success! :" + data);
+		});
+		verify.perform();
+	}
+	res.redirect('/', 302);
 });
 
 router.use(function(req,res,next){
