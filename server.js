@@ -153,7 +153,7 @@ router.get('/about', function(req,res) {
 
 // Replace this with a proper success view
 router.get('/success', function(req, res) {
-	res.send("Please check your email for verification.");
+	res.send("We've sent you a verification message! Please check your email.");
 });
 
 // A way to see the headers data that is sent by the browser to the server
@@ -179,7 +179,7 @@ router.get('/verify', function(req, res) {
 		});
 		verify.perform();
 	} else {
-		res.send("Oops.");
+		res.send("Something went wrong on our end.");
 	}
 });
 
