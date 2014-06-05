@@ -59,7 +59,6 @@ router.post('/login', function(req, res, next) {
 		if (err) return next(err);
 		if (!user) {
 			req.session.messages = info.message;
-			console.log("Login:");
 			console.log(req.session.messages);
 			return res.redirect('/login');
 		}
