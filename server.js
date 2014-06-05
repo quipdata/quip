@@ -9,10 +9,15 @@ var session = require('cookie-session'); // sets up cookie-based sessions
 var addrs = require('email-addresses'); // verifies emails as valid format
 var app = express();		// main server loop
 var port = process.env.PORT || 1337;  // port to listen on
+var passport = require('passport'); // authenitcation shim
+
 // imports from my modules
 var fortune = require('./lib/fortune.js'); // light amusing script for testing
 var SQL = require('./lib/sql.js'); // provides interface for SQL events
-var mail = require('./lib/mail.js');
+var mail = require('./lib/mail.js'); // used to send email to users
+var pass = require('./lib/pass.js'); // passport support
+pass(passport);
+
 // Globals for modules
 // Don't remove this! The other SQL commands will still work, but they'll be
 // creating new connections as they do so, rapidly filling the connection queue
@@ -28,8 +33,10 @@ app.set('view engine','handlebars');
 app.set('port', port );
 app.use(cookieParser('warp5oh'));
 app.use(session({ secret: 'sessionNow'}));
+app.use(passport.initialize() );
+app.use(passport.session() );
 
-// The default router
+// The default (and only) router
 var router = express.Router();
 
 router.get('/', function(req,res) {
@@ -47,18 +54,25 @@ router.get('/login', function(req,res) {
 	res.render('login');
 });
 
-router.post('/login', function(req,res) {
-	if(req.xhr || req.accepts('json')==='json') {
-		// req.body is where the json will be
-		res.cookie('userLogin', req.body.name, {signed:true, httpOnly:true});
-		res.redirect(302, '/');
-	} else {
-		res.send('Failed to login.');
-	}
+router.post('/login', function(req, res, next) {
+	passport.authenticate('local', function(err, user, info) {
+		if (err) return next(err);
+		if (!user) {
+			req.session.messages = info.message;
+			console.log("Login:");
+			console.log(req.session.messages);
+			return res.redirect('/login');
+		}
+		req.login(user, function(err) {
+			if (err) return next(err);
+			//console.log(req.user);
+			return res.redirect('/');
+		});
+	})(req, res, next);
 });
 
 router.get('/logout', function(req,res) {
-	res.clearCookie('userLogin');
+	req.logout();
 	res.redirect(302, '/');
 });
 
@@ -185,9 +199,8 @@ app.use(function(req, res, next) {
 });
 
 app.use(function(req,res,next) {
-	res.locals.name = req.signedCookies.userLogin;
-	if (res.locals.name) {
-		res.locals.loggedIn = true;
+	if (req.user) {
+		res.locals.name = req.user.user_nickname;
 	}
 	next();
 });
