@@ -15,8 +15,8 @@ var passport = require('passport'); // authenitcation shim
 var fortune = require('./lib/fortune.js'); // light amusing script for testing
 var SQL = require('./lib/sql.js'); // provides interface for SQL events
 var mail = require('./lib/mail.js'); // used to send email to users
-var pass = require('./lib/pass.js'); // passport support
-pass(passport);
+
+SQL.Pass(passport);
 
 // Globals for modules
 // Don't remove this! The other SQL commands will still work, but they'll be
