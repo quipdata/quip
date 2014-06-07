@@ -10,7 +10,7 @@ var addrs = require('email-addresses'); // verifies emails as valid format
 var app = express();		// main server loop
 var port = process.env.PORT || 1337;  // port to listen on
 var passport = require('passport'); // authenitcation shim
-
+var uuid = require('node-uuid');
 // imports from my modules
 var fortune = require('./lib/fortune.js'); // light amusing script for testing
 var SQL = require('./lib/sql.js'); // provides interface for SQL events
@@ -41,6 +41,10 @@ var router = express.Router();
 
 router.get('/', function(req,res) {
 	res.render('home');
+});
+
+router.get('/uuid', function(req,res) {
+	res.send( uuid.v4() );
 });
 
 router.get('/adminLogout', function(req,res) {
