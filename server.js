@@ -43,7 +43,10 @@ router.get('/', function(req,res) {
 	res.render('home');
 });
 
+// if you don't logout with req.logout first before killing the sql connection
+// then passport will horf an ugly looking error.
 router.get('/adminLogout', function(req,res) {
+	req.logout();
 	command.end();
 	res.redirect(302, '/');
 });
@@ -64,7 +67,6 @@ router.post('/login', function(req, res, next) {
 		}
 		req.login(user, function(err) {
 			if (err) return next(err);
-			//console.log(req.user);
 			return res.redirect('/');
 		});
 	})(req, res, next);
@@ -151,6 +153,12 @@ router.get('/about', function(req,res) {
 	});
 });
 
+router.get('/test', function(req, res) {
+	res.render('test', {
+
+	});
+});
+
 // Replace this with a proper success view
 router.get('/success', function(req, res) {
 	res.send("We've sent you a verification message! Please check your email.");
@@ -200,6 +208,7 @@ app.use(function(req, res, next) {
 app.use(function(req,res,next) {
 	if (req.user) {
 		res.locals.name = req.user.user_nickname;
+		res.locals.fbtoken = req.user.fb_token;
 	}
 	next();
 });
