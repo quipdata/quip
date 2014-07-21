@@ -1,0 +1,44 @@
+<h1>Firebase Test</h1>
+<p>Firebase stuff:</p>
+
+<!--vendor/bootsrap-3.2.0-dist/whatever: js, fonts, or css; if js use boostrap.min.js for smaller size-->
+
+
+<p>First: <input data-bind='value: firstName'/></p>
+<p>Last: <input data-bind='value: lastName'/></p>
+<p>Hello, <text data-bind='text: fullName'><text></p>
+<p><button data-bind='click: registerClick'>Admin?</button></p>
+<!--viewmodels and firebase interaction-->
+<script>
+	var fb = new Firebase('https://incandescent-fire-6697.firebaseio.com/users/');
+	var fbtoken = '{{fbtoken}}';
+
+	fb.auth(fbtoken, function(error, result) {
+		if(error) {
+			console.log("Login failed", error);
+		} else {
+			console.log("Login success with payload:", result.auth);
+			fb.child(result.auth.username).set('Testing');
+		}
+	});
+
+	var ViewModel = function(first, last) {
+		this.firstName = ko.observable(first);
+		this.lastName = ko.observable(last);
+		this.fullName = ko.computed(function() {
+		return this.firstName() + " " + this.lastName();
+		}, this);
+		this.registerClick = function() {
+			fb.parent().update( { fb: "I'm an admin."});
+		}
+	};
+
+	ko.applyBindings(new ViewModel("Planet", "Earth"));
+</script>
+
+<a href="/about" target="_blank">Fortune cookie?</a>
+
+<p>
+	QuipData will be out of bounds.
+	<a href="/contact">Contact page</a>
+</p>
