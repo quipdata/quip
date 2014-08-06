@@ -1,0 +1,74 @@
+<html>
+<head>
+	<!--Foreign Libraries-->
+	<script src='https://cdn.firebase.com/js/client/1.0.11/firebase.js'></script>
+	<script src='lib/jquery-2.1.0.min.js'></script>
+	<script src="lib/kinetic-v5.1.0.min.js"></script>
+	<script src='lib/uuid.js'></script>
+	
+	<!--Dev Created Libraries-->
+	<script src='lib/functions.js'></script>
+	<script src="lib/kinetic.prototype.js"></script>
+	<script src="lib/kinetic+.js"></script>
+	<script src="lib/firebase+.js"></script>
+	<script src="lib/cloud_handler.js"></script>
+	<script src="lib/transaction.js"></script>
+	<script src="lib/transaction.cloud.js"></script>
+</head>
+<body>
+	<button onclick="refresh()">Refresh</button>
+	<div name="errors" id="errors" style="min-width: 800px;display: none;"></div>
+	<div name="console" id="console" style="border-style: solid;min-width: 800px;min-height: 500px;">Loading...</div>
+	<button onclick="refresh()">Refresh</button>
+    <script>
+    	var fbModel = new Firebase('https://shining-fire-3212.firebaseio.com/Model');
+    	
+    	var userID = uuid.v4();
+    	var model = {};
+    	var errors = [];
+    	
+    	fbModel.once('value', function(data) {
+			model = data.val();
+			setListeners();
+			deleteTest( 0 );
+			refresh();
+		});
+		
+		function deleteTest( _i ){
+			if( model.VisualModel.comments['bc22185f-0d6c-468a-9267-54466f666821'] != undefined ){
+				var toDelete = [
+					{	"objectID" : "#/VisualModel/comments/bc22185f-0d6c-468a-9267-54466f666821",
+						"commandType" : "delete",
+						"value" : null
+					}
+				]
+				var trans = createTransaction( "VisualModel", toDelete );
+				processTransactions( trans );
+				alert( _i );
+				refresh();
+				return
+			}
+			if( _i > 120 ){
+				alert( _i );
+				return;
+			}
+			_i++;
+			setTimeout( 'deleteTest( ' + _i + ' )', 500 );
+		}
+		
+		function refresh(){			
+			var sModel = JSON.stringify(model);
+			
+			var output = JSONStringToHTML( sModel );
+			
+			$('#console').html(output);
+			
+			if( errors.length > 0 ){
+				var sErrors = JSON.stringify( errors );
+				var eOutput = JSONStringToHTML( sErrors );
+				$('#errors').html(eOutput)
+					.show();				
+			}
+		}
+	</script>
+</body>
