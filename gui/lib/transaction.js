@@ -332,7 +332,9 @@ function getReverseAction( _action, _transactionType ){
 	}
 }
 
+
 function updateObjectLog( _action, _transactionType ){
+	//Get correct objectLog
 	if( _transactionType == 'Model' ){
 		var objectLogRoot = model.Model.Model.TransactionLog.ObjectLogs;
 	} else {
