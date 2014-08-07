@@ -21,7 +21,7 @@
  * 	will be appended to this object.
  */
 function createTransaction( _transactionType, _actionsParams, _masterTran ){
-	if( _transactionType == undefined || ( _transactionType != 'Model' && _transactionType != 'VisualModel' )
+	if( _transactionType == undefined || ( _transactionType != 'Model' && _transactionType != 'VisualModel' ) )
 		throwError( 'transactoin.js', 'createTransaction', '_transactionType not provided or not a valid value' );
 	if( _actionsParams == undefined ) 
 		throwError( 'transactoin.js', 'createTransaction', '_actionParams not provided' );
@@ -66,7 +66,7 @@ function createTransaction( _transactionType, _actionsParams, _masterTran ){
 		if( _actionsParams[i].objectID == undefined ) 
 			throwError( 'transactoin.js', 'createTransaction', 'objectID provided for at leaset one actionParam' );
 		if(  _actionsParams[i].commandType == undefined 
-		|| ( _actionsParams[i].commandType != 'insert' && _actionsParams[i].commandType != 'update' && _actionsParams[i].commandType != 'delete' ){
+		|| ( _actionsParams[i].commandType != 'insert' && _actionsParams[i].commandType != 'update' && _actionsParams[i].commandType != 'delete' ) ){
 			throwError( 'transactoin.js', 'createTransaction', 'commandType not provided or invalid for at leaset one actionParam' );		
 		}
 	
@@ -91,7 +91,93 @@ function createTransaction( _transactionType, _actionsParams, _masterTran ){
 		}
 	}
 	
+	//Final validation check to make sure everything was passed in correctly
+	var tranName = "";
+	var aTran = {};
+	for( tranName in trans ){
+		aTran = trans[ tranName ];
+		validateTransaction( aTran );
+	}
+	
 	return trans;
+}
+
+/*	validateTransaction: validates that a transaction is propertly formated.
+ * 	this function validates SINGLE transaction not the master transactions that
+ * 	are returned by createTransaction.
+ * 
+ * 	Params:
+ * 	_transaction: the transaction to validate
+ * 	_actionProcessed: is passed to validateAction
+ */
+function validateTransaction( _transaction, _actionProcessed ){
+	if( _transaction == undefined )
+		throwError( 'transaction.js', 'validateTransaction', 'passed _transaction was undefined' );
+		
+	if( _transaction.id == undefined || typeof _transaction.id != 'string' )
+		throwError( 'transaction.js', 'validateTransaction', 'id is not valid' );
+		
+	if( _transaction.transactionType == undefined || typeof _transaction.transactionType != 'string'
+	|| ( _transaction.transactionType != 'Model' && _transaction.transactionType != 'VisualModel' ) )
+		throwError( 'transaction.js', 'validateTransaction', 'transactionType is not valid' );
+		
+	if( _transaction.modifiedBy == undefined || typeof _transaction.modifiedBy != 'string' )
+		throwError( 'transaction.js', 'validateTransaction', 'modifiedBy not valid' );
+		
+	if( _transaction.modifiedOn == undefined || typeof _transaction.modifiedOn != 'string' )
+		throwError( 'transaction.js', 'validateTransaction', 'modifiedOn not valid' );
+		
+	if( _transaction.Actions == undefined || typeof _transaction.Actions != 'object' )
+		throwError( 'transaction.js', 'validateTransaction', 'Action is undefined or not an object' );
+		
+	var action = {};
+	var actionName = "";
+	for( actionName in _transaction.Actions ){
+		action = _transaction.Actions[ actionName ]; 
+		
+		validateAction( action, _actionProcessed );  
+	} 
+} 
+
+/*	validateAction: validates the passed action.
+ * 
+ * 	Params: 
+ * 	_action: action to validate
+ * 	_actionProcessed (optional): if this is parameter is defined checks that rely on the transaction
+ * 	not having been processed yet will be bypassed
+ */
+function validateAction( _action, _actionProcessed ){
+	if( _action == undefined )
+		throwError( 'transaction.js', 'validateAction', 'passed _action was undefined' );
+	
+	if( _action.id == undefined || typeof _action.id != 'string' )
+		throwError( 'transaction.js', 'validateAction', 'id is not valid' ); 
+	
+	if( _action.objectID == undefined || typeof _action.objectID != 'string' )
+		throwError( 'transaction.js', 'validateAction', 'objectID is not valid' );
+		
+	if( _action.changeUI == undefined || typeof _action.changeUI != 'boolean' )
+		throwError( 'transaction.js', 'validateAction', 'changeUI is not valid' );
+		
+	if( _action.changeRemote == undefined || typeof _action.changeRemote != 'boolean' )
+		throwError( 'transaction.js', 'validateAction', 'changeRemote is not valid' );
+		
+	if( _action.commandType == undefined || typeof _action.commandType != 'string'
+	||	(  _action.commandType != 'insert' && _action.commandType != 'update' && _action.commandType != 'delete' ) )
+		throwError( 'transaction.js', 'validateAction', 'commandType is not valid' );
+		
+	if( _action.commandType != 'insert' && _actionProcessed == undefined ){
+		var obj = getObjPointer( model, _action.objectID )
+		if( obj == undefined || typeof obj != 'object' )
+			throwError( 'transaction.js', 'validateAction', 'commandType is not insert and the objectID is not found' );
+	}
+	
+	if ( _action.commandType == 'delete' && typeof _action.value != 'object' && _action.value != null )
+		throwError( 'transaction.js', 'validateAction', 'value is not valid' );
+	
+	if( _action.commandType != 'delete' && typeof _action.value != 'object' )
+		throwError( 'transaction.js', 'validateAction', 'value is not valid' );
+		
 }
 
 /*	processTransactions: takes a transaction as returned by createTransaction
@@ -113,9 +199,24 @@ function processTransactions( _transaction ){
 	 */ 
 	var fullModelTrans = {};
 	
-	//Loop through every transaction in the passed transaction
+	//Validate parameters
 	var name = ""
 	var transaction = {};
+	for( name in _transaction ){
+		transaction = _transaction[name];
+		
+		try{
+			validateTransaction( transaction );  
+		}catch(err){
+			throwError( 'transaction.js', 'processTransactions', 'passed parameter was not valid', false );
+			criticalError();
+			return;
+		}
+	}
+	
+	//Loop through every transaction in the passed transaction
+	name = ""
+	transaction = {};
 	for( name in _transaction ){
 		transaction = _transaction[name];
 		
@@ -135,17 +236,17 @@ function processTransactions( _transaction ){
 			return;
 		}
 		
-		//Process transaction in the cloud
+		//Process transaction in the cloud (function is on transaction.cloud.js)
 		try{
 			processTransactionsCloudHelper( name, transaction );
 		}catch(err){
-			throwError( 'transaction.js', 'processTransactionsHelper', err.message, false );
+			throwError( 'transaction.js', 'processTransactionsCloudHelper', err.message, false );
 			criticalError();
 		}
 	}
 	
 	/*	Store the fullModelTrans in the cloud, the cloud will send it
-	 * 	back for local storage
+	 * 	back for local storage (function is on transaction.cloud.js)
 	 */
 	try{
 		storeFullModelTrans( fullModelTrans );
@@ -164,6 +265,8 @@ function processTransactions( _transaction ){
  * 	_transaction: a single transaction as created by createTransaction  
  */
 function processTransactionsHelper( _name, _transaction ){
+	validateTransaction( _transaction );
+	
 	// extracts actions from the passed transaction
 	var actions = _transaction.Actions;
 	
@@ -184,7 +287,7 @@ function processTransactionsHelper( _name, _transaction ){
 	var transactionsPath = "" 
 	if( _transaction.transactionType == 'Model' ){
 		transactions = model.Model.Model.TransactionLog.Transactions;
-	} else {
+	} else if( _transaction.transactionType == 'VisualModel' ) {
 		transactions = model.VisualModel.TransactionLog.Transactions;
 	}
 	
@@ -206,17 +309,14 @@ function processTransactionsHelper( _name, _transaction ){
 		//Load up local storage container for the action's value
 		var localObject = getObjPointer( model, action.objectID );
 		
-		//Validate Action
-		if( action.value == null && action.commandType != 'delete' )
-			throwError( 'transaction.js', 'processTransactionsHelper', 'value is null and command type is not delete' );
-		if( action.value == undefined ) 
-			throwError( 'transaction.js', 'processTransactionsHelper', 'value undefined' );
 		
-		//Set version for the action.	
-		if( localObject == undefined || localObject.version == undefined ){
-			action.value['version'] = 0;
-		} else {
-			action.value['version'] =  ( localObject.version + 1 ); 
+		if( action.value != undefined ){
+			//Set version for the action.	
+			if( localObject == undefined || localObject.version == undefined ){
+				action.value['version'] = 0;
+			} else {
+				action.value['version'] =  ( localObject.version + 1 ); 
+			}
 		}
 		
 		//Perfomr the action
@@ -238,19 +338,20 @@ function processTransactionsHelper( _name, _transaction ){
  * 	_transactionType: if this is a Model or VisualModel action
  */
 function getReverseAction( _action, _transactionType ){
-	if( _action == undefined || _transactionType == undefined || ( _transactionType != 'Model' && _transactionType != 'VisualModel' )
-		throwError( 'transaction.js', 'getReverseAction', 'Parameters are not valid' );
+	validateAction( _action );
+	
+	if( _transactionType != 'Model' && _transactionType != 'VisualModel' )
+		throwError( 'transaction.js', 'getReverseAction', '_transactionType are not valid' );
 	
 	//Get correct objectLog
 	if( _transactionType == 'Model' ){
 		var objectLogRoot = model.Model.Model.TransactionLog.ObjectLogs;
 	} else if( _transactionType == 'VisualModel' )  {
 		var objectLogRoot = model.VisualModel.TransactionLog.ObjectLogs;
-	} else {
-		throwError( 'transaction.js', 'getReverseAction', 'Transaction Type not valid' );
 	}
 	
-	var objectLog = objectLogRoot[ _action.objectID ];
+	var objID = getPointerUUID( _action.objectID )
+	var objectLog = objectLogRoot[ objID ];
 	
 	if( objectLog != undefined ){
 		//Get get current action from the head
@@ -271,7 +372,7 @@ function getReverseAction( _action, _transactionType ){
 					"value" : null	
 				}	
 			} else {
-				throwError(  'transaction.js', 'getReverseAction', 'new action is insert and previous is not delete or not found' ];
+				throwError(  'transaction.js', 'getReverseAction', 'new action is insert and previous is not delete or not found' );
 			}
 		//If update and last action was not delete extract the last action
 		} else if ( _action.commandType == 'update' ){
@@ -305,15 +406,17 @@ function getReverseAction( _action, _transactionType ){
 		 * 	and return a new delete action
 		 */
 		if( _action.commandType == "insert" ){
+			var objID = getPointerUUID( _action.objectID );
+			
 			if( _transactionType == 'Model' ){
-				var id = "#/Model/Model/TransactionLog/ObjectLogs/" + _action.objectID;
+				var id = "#/Model/Model/TransactionLog/ObjectLogs/" + objID;
 				var pairID = id + "/" + uuid.v4();
 			} else {
-				var id = "#/VisualModel/TransactionLog/ObjectLogs/" + _action.objectID;
+				var id = "#/VisualModel/TransactionLog/ObjectLogs/" + objID;
 				var pairID = id + "/" + uuid.v4();
 			}
 			
-			objectLogRoot[_action.objectID] = {
+			objectLogRoot[ objID ] = {
 				"id" : id,
 				"objectID" : _action.objectID,
 				"head" : null,
@@ -332,8 +435,19 @@ function getReverseAction( _action, _transactionType ){
 	}
 }
 
-
+/*	updateObjectLog: adds passed action to the top of the objectLog stack
+ * 	and manages head of the stack.
+ * 
+ * 	Params:
+ * 	_action: the action to be added to the object log
+ * 	_transactionType: if this is a Model or VisualModel action 
+ */
 function updateObjectLog( _action, _transactionType ){
+	validateAction( _action );
+	
+	if( _transactionType != 'Model' && _transactionType != 'VisualModel' )
+		throwError( 'transaction.js', 'getReverseAction', '_transactionType are not valid' );
+	
 	//Get correct objectLog
 	if( _transactionType == 'Model' ){
 		var objectLogRoot = model.Model.Model.TransactionLog.ObjectLogs;
@@ -341,23 +455,14 @@ function updateObjectLog( _action, _transactionType ){
 		var objectLogRoot = model.VisualModel.TransactionLog.ObjectLogs;
 	}
 	
-	var objectLogID = "";
-	var objectLog = {};
-	found = false
-	for( objectLogID in objectLogRoot ){
-		if( objectLogID != "empty" ){
-			objectLog = objectLogRoot[objectLogID];
-			if( objectLog.objectID == _action.objectID ){
-				found = true;
-				break;
-			}
-		}
+	var objID = getPointerUUID( _action.objectID )
+	var objectLog = objectLogRoot[ objID ];
+	
+	if( objectLog == undefined ){
+		throwError( 'transaction.js', 'updateObjectLog', 'objectID not found in objectLog' );
 	}
 	
-	if( found == false ){
-		throwError( 'transaction.js', 'updateObjectLog', 'objectID not found' );
-	}
-	
+	//Set the UUID for pointer pair and create the pair
 	var actionPairID = uuid.v4()
 	
 	var actionPair = {
@@ -365,13 +470,24 @@ function updateObjectLog( _action, _transactionType ){
 		"PreviousPair" : objectLog.head 
 	}
 	
+	//Add action pair and point head to the new pair
 	objectLog.ActionPairs[actionPairID] = actionPair;
 	objectLog.head = objectLog.id + '/ActionPairs/' + actionPairID;
 }
 
+/*	executeActions: performs the action on the local storage version
+ * 	of the model.
+ * 
+ * 	Parmas: 
+ * 	_action: action to be performed
+ */
 function executeActions( _action ){
+	validateAction( _action );
+	
+	//switch statement for each kind of commandType
 	switch( _action.commandType ){
 		case 'insert':
+		//add the obejct at the objectID location
 			var container = getObjPointerParent( model, _action.objectID );
 			var id = getPointerUUID( _action.objectID );
 
@@ -379,6 +495,7 @@ function executeActions( _action ){
 				container[id] = _action.value;
 			break;
 		case 'update':
+		//overwrite the object at the objectID with the passed object
 			var container = getObjPointerParent( model, _action.objectID );
 			var id = getPointerUUID( _action.objectID );			
 			
@@ -386,6 +503,7 @@ function executeActions( _action ){
 				container[id] = _action.value;
 			break;
 		case 'delete':
+		//delete the obejct at objectID
 			var container = getObjPointerParent( model, _action.objectID );
 			var id = getPointerUUID( _action.objectID );			
 			
