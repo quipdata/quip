@@ -1,0 +1,41 @@
+{
+    "Model": {
+        "Model": {
+            "metadata": {
+                "id": "",
+				"name": "",
+				"type": "",
+                "creator": "",
+                "createdOn": "",
+                "editors": "",
+                "modifiedDate": ""
+            },
+            "ModelObjects": {"empty": ""},
+            "ModelRelationships": {"empty": ""},
+            "ModelRules": {"empty": ""},
+            "TransactionLog": {
+            	"Transactions": {"empty": ""},
+				"ObjectLogs": {"empty": ""},
+	            "TransactionLog": {"empty": ""}
+			}
+		},
+        "ModelRefs": {"empty": ""}
+    },
+	"VisualModel": {
+     	"metadata": {
+			"id": "",
+    		"name": "",
+			"type": ""
+		},
+		"groups": {"empty": ""},
+		"links": {"empty": ""},
+		"comments" : {"empty": ""},
+        "TransactionLog": {
+        	"Transactions": {"empty": ""},
+			"ObjectLogs": {"empty": ""},
+            "TransactionLog": {"empty": ""}
+		}
+    },
+    "TransactionLog": {"empty": ""},
+    "loaded" : false
+}

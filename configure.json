@@ -1,0 +1,18 @@
+{
+	"mysql": {
+		"host":"us-cdbr-azure-west-a.cloudapp.net",
+		"user":"bee741e5969e8c","password":"8a2a5909",
+		"database":"quiptestdb"},
+	"firebase": {
+		"url":"https://incandescent-fire-6697.firebaseio.com/",
+		"secret":"sDo0vPzwyQIlDp1U4voPOLH3OIs2ly5zLGLdXQuo"
+	},
+	"email": {
+		"host":"smtp.washington.edu",
+		"port":587,
+		"auth": {
+			"user":"quipdata@uw.edu",
+			"pass":"Barn!burner"
+		}
+	}
+}

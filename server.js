@@ -18,11 +18,6 @@ var mail = require('./lib/mail.js'); // used to send email to users
 
 SQL.Pass(passport);
 
-// Globals for modules
-// Don't remove this! The other SQL commands will still work, but they'll be
-// creating new connections as they do so, rapidly filling the connection queue
-var command = new SQL.Command();
-command.start();
 // handlebars is our current view engine, and res.render calls will be routed
 // to the handlebars engine
 var handlebars = require('express3-handlebars').create({defaultLayout:'main'});
@@ -47,8 +42,8 @@ router.get('/', function(req,res) {
 // then passport will horf an ugly looking error.
 router.get('/adminLogout', function(req,res) {
 	req.logout();
-	command.end();
 	res.redirect(302, '/');
+	//command.end();
 });
 
 // note that router.get handles GET requests and
@@ -117,7 +112,7 @@ router.post('/register', function(req,res) {
 				var response;
 				response = "Click this link to finish registration: ";
 				response = response + "http://localhost:1337/verify?" + data;
-				mail.sendMail(address, response);
+				mail.sendMail(address, "QuipData email verification", response);
 				res.redirect('/success', 302);
 			});
 			register.perform();
@@ -153,10 +148,85 @@ router.get('/about', function(req,res) {
 	});
 });
 
-router.get('/test', function(req, res) {
-	res.render('test', {
+router.get('/file', function(req, res) {
+	/* uncomment this for production
+	if (!req.user) {
+		res.redirect('/',302);
+	} //*/
 
+	res.render('test', {
+		root: req.user.file_uuid
 	});
+});
+
+// This handles all filesystem-related work
+router.get('/fs', function(req, res) {
+	var fs = new SQL.FS();
+	fs.on("error", function(error) {
+		res.json( { type: "error", msg: error } );
+	});
+	fs.on("failure", function(error) {
+		res.json( { type: "failure", msg: error } );
+	});
+
+	switch (req.query.operation) {
+		case "flist":
+			fs.on("success", function(data) {
+				res.json( {type: "success", msg: data} );
+			});
+			fs.flist(req.query.file_uuid);
+			break;
+		case "fnew":
+			fs.on("success", function(data) {
+				res.json( { type: "success", msg: "New file made"} );
+			});
+			fs.fnew(req.query.parent_uuid, req.user.user_uuid, req.query.file_name, req.query.file_type );
+			break;
+		case "fopen":
+			var xcl = {};
+			fs.on("success", function(data) {
+				xcl[req.user.user_uuid] = 1;
+				xcl = data;
+				fs.loadXCL(req.query.file_uuid, xcl);
+				fs.load(req.query.file_uuid, SQL.emptyModel);
+			});
+			fs.fxcl(req.query.file_uuid);
+
+			fs = new SQL.FS();
+			fs.on("error", function(error) {
+				res.json( { type: "error", msg: error });
+			});
+			fs.on("failure", function(error) {
+				res.json( { type: "failure", msg: error });
+			});
+			fs.on("success", function(data) {
+				res.json( { type: "success", msg: data } );
+				xcl[data.user_uuid] = 4;
+				fs.loadXCL(req.query.file_uuid, xcl);
+				fs.loaded(req.query.file_uuid);
+				//fs.load(req.query.file_uuid, JSON.parse(data.file_json));
+			});
+			fs.fopen(req.query.file_uuid, req.user.user_uuid);
+			break;
+		case "fancyXCL":
+			fs.on("success", function(data) {
+				res.json( {type: "success", msg: data });
+			});
+			fs.fancyXCL(req.query.file_uuid);
+			break;
+		case 'fsave':
+			console.log("Someone wants to save " + req.query.file_uuid);
+			break;
+		case 'fdelete':
+			fs.on("success", function(data) {
+				res.json( { type: "success", msg: "file deleted"} );
+			});
+			fs.fdelete(req.query.file_uuid, req.user.user_uuid);
+			break;
+		default:
+			res.json( { type: "error", msg: "Unknown Command"} );
+			break;
+	}
 });
 
 // Replace this with a proper success view
@@ -165,11 +235,13 @@ router.get('/success', function(req, res) {
 });
 
 // A way to see the headers data that is sent by the browser to the server
+// Kept for posterity; to re-enable, turn the /* into a //*
+/*
 router.get('/headers', function(req,res) {
 	var s = '';
 	for (var name in req.headers) s += name + ": " + req.headers[name] + '<p>';
 		res.send(s);
-});
+});//*/
 
 router.get('/verify', function(req, res) {
 	if ( req.query.email && req.query.validate ) {
