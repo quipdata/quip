@@ -2,18 +2,18 @@
 <head>
 	<!--Foreign Libraries-->
 	<script src='https://cdn.firebase.com/js/client/1.0.11/firebase.js'></script>
-	<script src='lib/jquery-2.1.0.min.js'></script>
-	<script src="lib/kinetic-v5.1.0.min.js"></script>
-	<script src='lib/uuid.js'></script>
-	
+	<script src='/guilib/jquery-2.1.0.min.js'></script>
+	<script src="/guilib/kinetic-v5.1.0.min.js"></script>
+	<script src='/guilib/uuid.js'></script>
+
 	<!--Dev Created Libraries-->
-	<script src='lib/functions.js'></script>
-	<script src="lib/kinetic.prototype.js"></script>
-	<script src="lib/kinetic+.js"></script>
-	<script src="lib/cloud_handler.js"></script>
-	<script src="lib/transaction.js"></script>
-	<script src="lib/transaction.cloud.js"></script>
-	<script src="lib/error_handler.js"></script>
+	<script src='/guilib/functions.js'></script>
+	<script src="/guilib/kinetic.prototype.js"></script>
+	<script src="/guilib/kinetic+.js"></script>
+	<script src="/guilib/cloud_handler.js"></script>
+	<script src="/guilib/transaction.js"></script>
+	<script src="/guilib/transaction.cloud.js"></script>
+	<script src="/guilib/error_handler.js"></script>
 </head>
 <body>
 	<button onclick="refresh()">Refresh</button>
@@ -22,14 +22,22 @@
 	<button onclick="refresh()">Refresh</button>
     <script>
     	var fbModel = new Firebase('{{FirebaseRef}}');
-    	
+
+    	fbModel.auth("{{auth_token}}", function(error) {
+    		if(error) {
+    			console.log("Login Failed!", error);
+    		} else {
+    			console.log("Login Succeeded!");
+    		}
+    	});
+
     	var userID = '{{UserUUID}}';
     	var model = {};
     	var errors = [];
 
-		function test(){ 	
+		function test(){
 			var newModelID = uuid.v4();
-	
+
 			var actions = [
 				{	"objectID" : "#/Model/Model/ModelObjects/" + newModelID,
 					"commandType" : "insert",
@@ -42,12 +50,12 @@
 					}
 				}
 			]
-			
+
 			var trans = createTransaction( "Model", actions );
-			
+
 			var newID = uuid.v4();
 			var objID = uuid.v4();
-			
+
 			var visualActions = [
 				{	"objectID" : "#/VisualModel/groups/" + newID,
 					"commandType" : "insert",
@@ -66,7 +74,7 @@
 					}
 				}
 			]
-			
+
 			visualActions[0]['value']['objects'][objID] = {
 			    "id": "#/VisualModel/groups/" + newID + "/objects/" + objID,
 			    "modelID": "#/Model/Model/ModelObjects/" + newModelID,
@@ -83,13 +91,13 @@
 			    "function": {},
 			    "links": {"empty":""}
 			}
-			
+
 			var vaString = JSON.stringify( visualActions );
 			var va2 = $.parseJSON( vaString );
 			va2[0].commandType = 'update';
-			
+
 			objID = uuid.v4();
-			
+
 			va2[0]['value']['objects'][objID] = {
 			    "id": "#/VisualModel/groups/" + newID + "/objects/" + objID,
 			    "modelID": "#/Model/Model/ModelObjects/" + newModelID,
@@ -105,11 +113,11 @@
 			    "function": {},
 			    "links": {"empty":""}
 			}
-			
+
 			var trans = createTransaction( "VisualModel", visualActions, trans );
-			
+
 			processTransactions( trans );
-			
+
 			var actions = [
 				{	"objectID" : "#/Model/Model/ModelObjects/" + newModelID,
 					"commandType" : "update",
@@ -122,13 +130,13 @@
 					}
 				}
 			]
-			
-			var trans2 = createTransaction( "Model", actions ); 
-	
+
+			var trans2 = createTransaction( "Model", actions );
+
 			var trans2 = createTransaction( "VisualModel", va2, trans2 );
-			
+
 			processTransactions( trans2 );
-			
+
 			var comment = [
 				{	"objectID" : "#/VisualModel/comments/bc22185f-0d6c-468a-9267-54466f666821",
 					"commandType" : "insert",
@@ -145,9 +153,9 @@
 					}
 				}
 			]
-			
+
 			objID = uuid.v4();
-			
+
 			comment[0]['value']['objects'][objID] = {
 			    "id": "#/VisualModel/comments/bc22185f-0d6c-468a-9267-54466f666821/objects/" + objID,
 			    "class": "Rect",
@@ -163,34 +171,34 @@
 			    "function": {},
 			    "links": {"empty":""}
 			}
-			
+
 			var trans3 = createTransaction( "VisualModel", comment );
-			
+
 			processTransactions( trans3 );
 		}
-    	
+
 		fbModel.once('value', function(data) {
 			model = data.val();
 			setListeners();
 			refresh();
 			test();
-			
+
 			var modelObjects = fbModel.child( 'loaded' );
 			modelObjects.set(true);
 		});
-		
-		function refresh(){			
+
+		function refresh(){
 			var sModel = JSON.stringify(model);
-			
+
 			var output = JSONStringToHTML( sModel );
-			
+
 			$('#console').html(output);
-			
+
 			if( errors.length > 0 ){
 				var sErrors = JSON.stringify( errors );
 				var eOutput = JSONStringToHTML( sErrors );
 				$('#errors').html(eOutput)
-					.show();				
+					.show();
 			}
 		}
     </script>

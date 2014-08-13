@@ -203,6 +203,8 @@
 				}, function(data) {
 					if (data.type == "success") {
 						console.log("App file opened.");
+						var uri = "http://localhost:1337/app/?fb=" + file.file_uuid;
+						window.open(uri);
 					}
 					// check if success, and if success, open in new tab
 					// let filesystem flush data over to Firebase

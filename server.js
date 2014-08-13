@@ -159,6 +159,17 @@ router.get('/file', function(req, res) {
 	});
 });
 
+// Launch application.
+router.get('/app', function(req, res) {
+
+	var fb = SQL.config.firebase.url + "files/" + req.query.fb;
+	res.render('./gui/index', {
+		auth_token: req.user.fb_token,
+		UserUUID: req.user.user_uuid,
+		FirebaseRef: fb
+	});
+});
+
 // This handles all filesystem-related work
 router.get('/fs', function(req, res) {
 	var fs = new SQL.FS();
@@ -280,7 +291,7 @@ app.use(function(req, res, next) {
 app.use(function(req,res,next) {
 	if (req.user) {
 		res.locals.name = req.user.user_nickname;
-		res.locals.fbtoken = req.user.fb_token;
+		res.locals.fb_token = req.user.fb_token;
 	}
 	next();
 });
