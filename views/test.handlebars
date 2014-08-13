@@ -75,7 +75,8 @@
 
 <p></p>
 <script>
-	var fb = new Firebase('https://incandescent-fire-6697.firebaseio.com/');
+
+	var fb = new Firebase('{{fb_base}}');
 	var fbtoken = '{{fb_token}}';
 
 	var root = "{{root}}";
@@ -203,7 +204,8 @@
 				}, function(data) {
 					if (data.type == "success") {
 						console.log("App file opened.");
-						var uri = "http://localhost:1337/app/?fb=" + file.file_uuid;
+						var uri = window.location.protocol + "//" + window.location.host;
+							uri += "/app/?fb=" + file.file_uuid;
 						console.log(uri);
 						window.open(uri);
 					}

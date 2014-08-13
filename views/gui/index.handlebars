@@ -23,7 +23,7 @@
     <script>
     	var fbModel = new Firebase('{{FirebaseRef}}');
 
-    	fbModel.auth("{{auth_token}}", function(error) {
+    	fbModel.auth("{{fb_token}}", function(error) {
     		if(error) {
     			console.log("Login Failed!", error);
     		} else {

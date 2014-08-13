@@ -292,6 +292,7 @@ app.use(function(req,res,next) {
 	if (req.user) {
 		res.locals.name = req.user.user_nickname;
 		res.locals.fb_token = req.user.fb_token;
+		res.locals.fb_base = SQL.config.firebase.url;
 	}
 	next();
 });
