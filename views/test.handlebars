@@ -76,7 +76,7 @@
 <p></p>
 <script>
 	var fb = new Firebase('https://incandescent-fire-6697.firebaseio.com/');
-	var fbtoken = '{{fbtoken}}';
+	var fbtoken = '{{fb_token}}';
 
 	var root = "{{root}}";
 
@@ -204,6 +204,7 @@
 					if (data.type == "success") {
 						console.log("App file opened.");
 						var uri = "http://localhost:1337/app/?fb=" + file.file_uuid;
+						console.log(uri);
 						window.open(uri);
 					}
 					// check if success, and if success, open in new tab
