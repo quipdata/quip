@@ -1,0 +1,56 @@
+<html>
+<head>
+	<!--Foreign Libraries-->
+	<script src='https://cdn.firebase.com/js/client/1.0.11/firebase.js'></script>
+	<script src='/guilib/jquery-2.1.0.min.js'></script>
+	<script src="/guilib/kinetic-v5.1.0.min.js"></script>
+	<script src='/guilib/uuid.js'></script>
+	
+	<!--Dev Created Libraries-->
+	<script src='/guilib/functions.js'></script>
+	<script src="/guilib/kinetic.prototype.js"></script>
+	<script src="/guilib/kinetic+.js"></script>
+	<script src="/guilib/cloud_handler.js"></script>
+	<script src="/guilib/transaction.js"></script>
+	<script src="/guilib/transaction.cloud.js"></script>
+	<script src="/guilib/error_handler.js"></script>
+</head>
+<body>
+    <script>
+    	var fbModel = new Firebase('https://vivid-fire-1112.firebaseio.com/test/transaction/');
+    	
+    	var userID = uuid.v4();
+    	var model = {};
+    	var errors = [];
+    	
+    	fbModel.once('value', function(data) {
+			model = data.val();
+			setListeners();
+			deleteTest( 0 );
+		});
+		
+		function deleteTest( _i ){
+			if( model.VisualModel.comments['bc22185f-0d6c-468a-9267-54466f666821'] != undefined ){
+				var toDelete = [
+					{	"objectID" : "#/VisualModel/comments/bc22185f-0d6c-468a-9267-54466f666821",
+						"commandType" : "delete",
+						"value" : null
+					}
+				]
+				var trans = createTransaction( "VisualModel", toDelete );
+				processTransactions( trans );
+				
+				var modelObjects = fbModel.child( 'loaded' );
+				modelObjects.set(true);
+				
+				return
+			}
+			if( _i > 120 ){
+				alert( _i );
+				return;
+			}
+			_i++;
+			setTimeout( 'deleteTest( ' + _i + ' )', 500 );
+		}
+	</script>
+</body>
