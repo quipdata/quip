@@ -57,7 +57,6 @@ router.post('/login', function(req, res, next) {
 		if (err) return next(err);
 		if (!user) {
 			req.session.messages = info.message;
-			console.log(req.session.messages);
 			return res.redirect('/login');
 		}
 		req.login(user, function(err) {
@@ -156,7 +155,8 @@ router.get('/app', function(req, res) {
 router.get('/fs', function(req, res) {
 	var fs = new SQL.FS();
 	fs.on("error", function(error) {
-		res.json( { type: "error", msg: error } );
+		console.log(error);
+		//res.json( { type: "error", msg: error } );
 	});
 	fs.on("failure", function(error) {
 		res.json( { type: "failure", msg: error } );
@@ -170,12 +170,18 @@ router.get('/fs', function(req, res) {
 			fs.flist(req.query.file_uuid);
 			break;
 		case "fnew":
+			var data = null;
 			fs.on("success", function(data) {
-				res.json( { type: "success", msg: "New file made"} );
+				if (data) {
+					fs.load(data, SQL.emptyModel);
+					res.json( { type: "success", msg: "New file made"} );
+					fs.fsave(data, req.user.user_uuid);
+				}
 			});
 			fs.fnew(req.query.parent_uuid, req.user.user_uuid, req.query.file_name, req.query.file_type );
 			break;
 		case "fopen":
+
 			var xcl = {};
 			fs.on("success", function(data) {
 				xcl[req.user.user_uuid] = 1;
@@ -196,11 +202,11 @@ router.get('/fs', function(req, res) {
 				res.json( { type: "success", msg: data } );
 				xcl[data.user_uuid] = 4;
 				fs.loadXCL(req.query.file_uuid, xcl);
-				fs.loaded(req.query.file_uuid);
-				//fs.load(req.query.file_uuid, JSON.parse(data.file_json));
+				fs.transferData(req.query.file_uuid, data);
 			});
 			fs.fopen(req.query.file_uuid, req.user.user_uuid);
 			break;
+
 		case "fancyXCL":
 			fs.on("success", function(data) {
 				res.json( {type: "success", msg: data });
@@ -208,7 +214,10 @@ router.get('/fs', function(req, res) {
 			fs.fancyXCL(req.query.file_uuid);
 			break;
 		case 'fsave':
-			console.log("Someone wants to save " + req.query.file_uuid);
+			fs.on("success", function(data) {
+				res.json( { type: "success", msg: "File saved." } );
+			});
+			fs.fsave(req.query.file_uuid, req.user.user_uuid);
 			break;
 		case 'fdelete':
 			fs.on("success", function(data) {
