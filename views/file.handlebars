@@ -1,0 +1,259 @@
+<h2>File System For {{name}}</h2>
+
+<table>
+	<thead><tr>
+		<th data-bind="visible: folders().length > 0">File Name</th><th>File Type</th>
+	</tr></thead>
+	<tbody data-bind="foreach: folders, visible: folders().length > 0">
+		<tr>
+			<td>
+				<a href="#" data-bind="click: $root.select">
+				<text data-bind="text: $data.file_name">
+			</td>
+			<td data-bind="text: $data.file_type"></td>
+			<td>
+				<a href="#" data-bind = "click: $root.del">Delete</a>
+			</td>
+			<td>
+				<a href="#" data-bind="visible: $root.chosenFileXCL() == null, click: $root.set">Share Settings</a>
+			</td>
+		</tr>
+	</tbody>
+</table>
+
+<!-- This is all just for setting up sharing. Complicated! -->
+<p data-bind="visible: chosenFileXCL() != null">
+	Share settings:<br>
+	Visibility:<br>
+	<label><input type="radio" value="Public" data-bind="checked: visibilityRadio"/>Public on the web</label><br>
+	<label><input type="radio" value="Link" data-bind="checked: visibilityRadio"/>Anyone with the link</label><br>
+	<label><Input type="radio" value="Private" data-bind="checked: visibilityRadio"/>Specific people</label><br>
+	Edit settings:<br>
+	<label><input type="radio" value="true" data-bind="checked: editLevel"/>
+		Editors can change visibility and sharing settings.
+	</label><br>
+	<label><input type="radio" value="false" data-bind="checked: editLevel"/>
+		Only the owner can change visibility and sharing settings.
+	</label><br>
+	People currently shared with:<br>
+	<ul data-bind="foreach: chosenFileXCL">
+		<li>
+			<text data-bind="text: user_email()"></text>
+			<select data-bind="options: $root.accessLevels, value: access_level"></select>
+			<a href="#" data-bind="click: $parent.delUser">Delete</a>
+		</li>
+	</ul>
+
+	<form data-bind="submit: addUser, visible: chosenFileXCL() != null">
+		New collaborator: <input data-bind="value: submit_email" placeholder="email of person to share with"/>
+		<select data-bind="options: accessLevels, value: submit_access"></select>
+		<button type="submit">Add</button>
+	</form>
+
+	<button data-bind='click: doneSet, visible: chosenFileXCL() != null'>Done</button>
+	<button data-bind='click: list, visible: chosenFileXCL() != null'>Cancel</button>
+</p>
+<!-- This ends the sharing section for view-->
+
+<text data-bind="visible: folders().length == 0">There doesn't appear to be anything here.</text>
+
+<form data-bind="submit: newFolder, visible: reqNewFolder">
+	<input data-bind = "value: newFolderName" placeholder="New folder name..."/>
+	<button type="submit">Add Folder</button>
+</form>
+
+<form data-bind="submit: newFile, visible: reqNewFile">
+	<input data-bind = "value: newFileName" placeholder="New file name..."/>
+	<button type="submit">Add File</button>
+</form>
+
+<p>
+	<button data-bind='click: list'>Refresh</button>
+	<button data-bind='click: activateNewFolder'>New Folder</button>
+	<button data-bind='click: activateNewFile'>New File</button>
+</p>
+
+<p></p>
+<script>
+
+	var fb = new Firebase('{{fb_base}}');
+	var fbtoken = '{{fb_token}}';
+
+	var root = "{{root}}";
+
+	var useOnce = "test";
+
+	fb.auth(fbtoken, function(error, result) {
+		if(error) {
+			console.log("Login failed", error);
+		} else {
+			console.log("Login success with payload:", result.auth);
+		}
+	});
+
+	// this function is for the share settings; specifically the XCL
+	function User(data) {
+		this.user_email = ko.observable(data.user_email);
+		this.access_level = ko.observable(data.access_level);
+	}
+
+	function ViewModel(fileRoot) {
+		var self = this;
+
+		// Data
+		self.fileRoot = fileRoot; // kind of want to always keep this around
+
+		self.newFileName = ko.observable();
+		self.newFolderName = ko.observable();
+		self.currentParentFolder = ko.observable(fileRoot);
+
+		self.reqNewFolder = ko.observable(false);
+		self.reqNewFile = ko.observable(false);
+
+		self.folders = ko.observableArray([]);
+
+		// specific observables for the setting of sharing options
+		self.visibilityRadio = ko.observable("Private");
+		self.editLevel = ko.observable("false");
+		self.chosenFileXCL = ko.observableArray(null);
+
+		self.accessLevels = ["View", "Comment", "Edit"];
+
+		self.submit_email = ko.observable();
+		self.submit_access = ko.observable();
+
+		// Operating Behaviour
+		self.activateNewFile = function() {
+			self.reqNewFile(true);
+		};
+
+		self.activateNewFolder = function() {
+			self.reqNewFolder(true);
+		};
+
+		// modify this to send nicely formatted data to server to update XCL tables
+		self.doneSet = function() {
+			console.log("doneSet has gathered the following:");
+			console.log( "File: " + self.folders()[0].file_name );
+			console.log( "Visibility: " + self.visibilityRadio() );
+			console.log( "Edit: " + self.editLevel() );
+
+			for (var i in self.chosenFileXCL() ) {
+				console.log( "User:" + self.chosenFileXCL()[i].user_email() );
+				console.log( "Access: " + self.chosenFileXCL()[i].access_level() );
+			}
+			self.submit_email(null);
+			self.submit_access(null);
+			self.chosenFileXCL(null);
+			self.list();
+		};
+
+		// for share settings
+		self.set = function(file) {
+			self.folders([file]);
+			$.getJSON("/fs", { operation: "fancyXCL", file_uuid: file.file_uuid}, function(data) {
+				if (data.type == "success") {
+					console.log(data.msg);
+					self.chosenFileXCL(data.msg);
+				}
+			});
+		};
+
+		self.addUser = function() {
+			self.chosenFileXCL.push(new User( { user_email: self.submit_email(), access_level: self.submit_access() }));
+			self.submit_email(null);
+			self.submit_access(null);
+		};
+
+		self.delUser = function(user) {
+			self.chosenFileXCL.remove(user);
+		};
+
+		self.list = function() {
+			$.getJSON("/fs", { operation: 'flist', file_uuid: self.currentParentFolder }, function(data) {
+				if (data.type == "success") {
+					console.log(data.msg);
+					self.chosenFileXCL(null);
+					self.folders(data.msg);
+				}
+			});
+		};
+
+		self.del = function(file) {
+			$.getJSON("/fs", {
+				operation: 'fdelete',
+				file_uuid: file.file_uuid
+			}, function(data) {
+				if (data.type == "success" ) {
+					console.log(data);
+					self.list();
+				}
+			});
+		};
+
+		self.select = function(file) {
+			if (file.file_type == 'folder') {
+				self.currentParentFolder(file.file_uuid);
+				self.list();
+			}
+			if (file.file_type == 'file') {
+				// launch application
+				$.getJSON("/fs", {
+					operation: 'fopen',
+					file_uuid: file.file_uuid
+				}, function(data) {
+					if (data.type == "success") {
+						console.log("App file opened.");
+						var uri = window.location.protocol + "//" + window.location.host;
+							uri += "/app/?fb=" + file.file_uuid;
+						console.log(uri);
+						window.open(uri);
+					}
+					// check if success, and if success, open in new tab
+					// let filesystem flush data over to Firebase
+					console.log(data);
+				});
+			}
+		};
+
+		self.newFolder = function() {
+			$.getJSON("/fs", {
+						operation: 'fnew',
+						parent_uuid: self.currentParentFolder(),
+						file_name: this.newFolderName(),
+						file_type: "folder"
+					}, function(data) {
+						console.log(data);
+						self.list();
+					});
+			self.newFolderName("");
+			self.reqNewFolder(false);
+		};
+
+		self.newFile = function() {
+			$.getJSON("/fs", {
+						operation: 'fnew',
+						parent_uuid: self.currentParentFolder(),
+						file_name: this.newFileName(),
+						file_type: "file"
+					}, function(data) {
+						console.log(data);
+						self.list();
+					});
+			self.newFileName("");
+			self.reqNewFile(false);
+
+		};
+		// startup
+		self.list();
+	};
+
+	ko.applyBindings(new ViewModel(root));
+</script>
+
+<a href="/about" target="_blank">Fortune cookie?</a>
+
+<p>
+	QuipData will be out of bounds.
+	<a href="/contact">Contact page</a>
+</p>

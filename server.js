@@ -62,7 +62,7 @@ router.post('/login', function(req, res, next) {
 		}
 		req.login(user, function(err) {
 			if (err) return next(err);
-			return res.redirect('/');
+			return res.redirect('/file');
 		});
 	})(req, res, next);
 });
@@ -112,7 +112,7 @@ router.post('/register', function(req,res) {
 				var response;
 				response = "Click this link to finish registration: ";
 				response = response + "http://localhost:1337/verify?" + data;
-				mail.sendMail(address, "QuipData email verification", response);
+				mail.sendMail(address, "QuipData wishes to verify your email", response);
 				res.redirect('/success', 302);
 			});
 			register.perform();
@@ -120,22 +120,6 @@ router.post('/register', function(req,res) {
 	} else {
 		res.send('We cannot process your registration at this time.');
 	}
-});
-
-router.get('/sql', function(req,res) {
-	var login = new SQL.Login('test','pointless');
-	login.on('error', function (error) {
-		console.log("An error occured");
-		res.redirect('/', 302);
-	});
-	login.on('failure', function(reason) {
-		console.log("Failed to retrieve SQL response");
-		res.redirect('/', 302);
-	});
-	login.on('success', function(data) {
-		res.send("Got: " + data);
-	});
-	login.perform();
 });
 
 // Here we see an example of templating in action - we swap our getFortune for
@@ -149,19 +133,17 @@ router.get('/about', function(req,res) {
 });
 
 router.get('/file', function(req, res) {
-	/* uncomment this for production
 	if (!req.user) {
 		res.redirect('/',302);
-	} //*/
+	}
 
-	res.render('test', {
+	res.render('file', {
 		root: req.user.file_uuid
 	});
 });
 
 // Launch application.
 router.get('/app', function(req, res) {
-
 	var fb = SQL.config.firebase.url + "files/" + req.query.fb;
 	res.render('./gui/index', {
 		auth_token: req.user.fb_token,
@@ -282,11 +264,11 @@ router.use(function(req,res,next){
 // this is needed to get POST and GET results!
 app.use(bodyParser());
 
-// This activates our test scripts when ?test=1 is at the end of the base url
+/* This activates our test scripts when ?test=1 is at the end of the base url
 app.use(function(req, res, next) {
-	res.locals.showTests = app.get('env') !== 'production' && req.query.test === '1';
+	res.locals.showTests = (req.query.test === '1' && req.user.user_is_admin === '1');
 	next();
-});
+});//*/
 
 app.use(function(req,res,next) {
 	if (req.user) {
