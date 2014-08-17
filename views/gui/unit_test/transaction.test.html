@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+    <title>QuipData UI Unit Test</title>
+	
+	<!--Foreign Libraries-->
+	<script src='/guilib/firebase_1.0.11.js'></script>
+	<script src='/guilib/jquery-2.1.0.min.js'></script>
+	<script src="/guilib/kinetic-v5.1.0.min.js"></script>
+	<script src='/guilib/uuid.js'></script>
+	
+	<!--Unit Test Libraries-->
+	<script src='/guilib/unittestlib/mocha.js'></script>
+	<script src='/guilib/unittestlib/chai.js'></script>
+	<script src='/guilib/unittestlib/json_equals.js'></script>
+	
+	<!--Dev Created Libraries-->
+	<script src='/guilib/functions.js'></script>
+	<script src="/guilib/kinetic.prototype.js"></script>
+	<script src="/guilib/kinetic+.js"></script>
+	<script src="/guilib/cloud_handler.js"></script>
+	<script src="/guilib/transaction.js"></script>
+	<script src="/guilib/transaction.cloud.js"></script>
+	<script src="/guilib/error_handler.js"></script>
+	
+	<!--CSS--->
+	<!--Unit Test CSS-->
+	<link rel="stylesheet" type="text/css" href="css/mocha.css">
+</head>
+<body>
+	<script>
+    	var fbModel = new Firebase('https://vivid-fire-1112.firebaseio.com/test/transaction/');
+    	
+    	var userID = 'e4644cb4-1624-4c46-966f-961595f64d17';
+    	var model = {};
+    	var errors = [];
+    	
+    	var onEmptyComplete = function(){
+    		fbModel.once('value', function(data) {
+				model = data.val();
+				setListeners();
+				mocha.run();
+			});
+    	}
+    	
+    	var emptyModel = {"Model":{"Model":{"metadata":{"id":"","name":"","type":"","creator":"","createdOn":"","editors":"","modifiedDate":""},"ModelObjects":{"empty":""},"ModelRelationships":{"empty":""},"ModelRules":{"empty":""},"TransactionLog":{"Transactions":{"empty":""},"ObjectLogs":{"empty":""},"TransactionLog":{"empty":""}}},"ModelRefs":{"empty":""}},"VisualModel":{"metadata":{"id":"","name":"","type":""},"groups":{"empty":""},"links":{"empty":""},"comments":{"empty":""},"TransactionLog":{"Transactions":{"empty":""},"ObjectLogs":{"empty":""},"TransactionLog":{"empty":""}}},"TransactionLog":{"empty":""},"loaded":false}
+	    fbModel.set( emptyModel, onEmptyComplete );
+	</script>
+	<div name="mocha" id="mocha"></div>
+	<div name="transaction" id="transaction" style="display: none;"></div>
+	<div name="asdf" id="asdf"></div>
+
+    <script>mocha.setup('bdd')</script>
+    <script>expect = chai.expect</script>
+    <script src="transaction.test.js"></script>
+</body>
