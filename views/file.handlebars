@@ -131,22 +131,43 @@
 			self.reqNewFolder(true);
 		};
 
-		// modify this to send nicely formatted data to server to update XCL tables
+		// This will send nicely formatted data to server to update XCL tables
 		self.doneSet = function() {
-			console.log("doneSet has gathered the following:");
-			console.log( "File: " + self.folders()[0].file_name );
-			console.log( "Visibility: " + self.visibilityRadio() );
-			console.log( "Edit: " + self.editLevel() );
+			var settings = {};
+			settings.file_uuid = self.folders()[0].file_uuid;
+			settings.edit_level = self.editLevel() ? 1:0;
+			settings.user_list = {};
 
 			for (var i in self.chosenFileXCL() ) {
-				console.log( "User:" + self.chosenFileXCL()[i].user_email() );
-				console.log( "Access: " + self.chosenFileXCL()[i].access_level() );
+				key = self.chosenFileXCL()[i].user_email();
+				value = self.chosenFileXCL()[i].access_level();
+				settings.user_list[key] = self.convertAccessLevel(value);
 			}
+			if (self.visibilityRadio() == 'Public') {
+				settings.user_list['Public@quipdata.com'] = 1;
+			}
+			if (self.visibilityRadio() == 'Link') {
+				settings.user_list['Link@quipdata.com'] = 1;
+			}
+
+			$.getJSON("/fs", { operation: "fshare", data: settings }, function(data) {
+				if (data.type == "success") {
+					console.log(data.msg);
+				}
+			});
+
 			self.submit_email(null);
 			self.submit_access(null);
 			self.chosenFileXCL(null);
 			self.list();
 		};
+
+		// This is just here to help doneSet
+		self.convertAccessLevel = function(level) {
+			if ( level === 'Comment' ) return 2;
+			if ( level === 'Edit' ) return 3;
+			return 1;
+		}
 
 		// for share settings
 		self.set = function(file) {

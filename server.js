@@ -38,14 +38,6 @@ router.get('/', function(req,res) {
 	res.render('home');
 });
 
-// if you don't logout with req.logout first before killing the sql connection
-// then passport will horf an ugly looking error.
-router.get('/adminLogout', function(req,res) {
-	req.logout();
-	res.redirect(302, '/');
-	//command.end();
-});
-
 // note that router.get handles GET requests and
 // router.post handles POST requests.
 router.get('/login', function(req,res) {
@@ -163,6 +155,12 @@ router.get('/fs', function(req, res) {
 	});
 
 	switch (req.query.operation) {
+		case "fshare":
+			fs.on("success", function(data) {
+				res.json( { type: "success", msg: data } );
+			});
+			fs.fshare(req.query.data, req.user.user_uuid);
+			break;
 		case "flist":
 			fs.on("success", function(data) {
 				res.json( {type: "success", msg: data} );
