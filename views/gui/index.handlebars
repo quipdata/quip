@@ -8,8 +8,9 @@
 	<script src='/vendor/uuid.js'></script>
 
 	<!--Dev Created Libraries-->
-	<script src='/guilib/layout.js'></script>
 	<script src='/guilib/functions.js'></script>
+	<script src='/guilib/layout.js'></script>
+	<script src='/guilib/chat.js'></script>
 	<script src="/guilib/kinetic.prototype.js"></script>
 	<script src="/guilib/kinetic+.js"></script>
 	<script src="/guilib/cloud_handler.js"></script>
@@ -22,24 +23,46 @@
 			//Set up layout
 			selectRibbon( 'ribbon_view' );
 			$( "#wandering_font_style" ).draggable({ handle : "#div_font_style_bar" });
-    	
-	    	//Start Firebase
-	    	var fbModel = new Firebase('{{FirebaseRef}}');
-	    	
-	    	var userID = '{{UserUUID}}';
-	    	var model = {};
-	    	var errors = [];
-	
+			$( "#wandering_chat" ).draggable({ handle : "#div_chat_bar" })
+				.resizable({ 
+					alsoResize : "#wandering_chat_main #wandering_chat_main_two"
+					, minHeight: 260
+				});
+			
+			//Start Firebase
+			var fbModelRef = '{{FirebaseRef}}';
+			var userID = '{{UserUUID}}';
+			var userName = '{{UserName}}';
+			
+			var model = {};
+			var errors = [];
+			
+			var fileUUID = getPointerUUID( fbModelRef );
+			var fbChatRef = fbModelRef.replace( '/files/', '/chat/' );
+			
+			var fbModel = new Firebase( fbModelRef );
+			var fbChat = new Firebase( fbChatRef );
+			
 			fbModel.once('value', function(data) {
 				model = data.val();
 				setListeners();
+			}, function(err){
+				openBlockingAlert( 'Could not start the application. Please try again latter.' );
+				throwError( 'index', 'Start Up', 'Firebase failed to start', true );
+			});
+			
+			fbChat.once('value', function(data) {
+				startChat();
+			}, function(err){
+				openBlockingAlert( 'Could not start the application. Please try again latter.' );
+				throwError( 'index', 'Start Up', 'Firebase chat failed to start', true );
 			});
 		});
     </script>
 	
 	<!--CSS--->
 	<!--Foreign Styles-->
-	<link rel="stylesheet" type="text/css" href="/vendor/jquery-ui.css">
+	<link rel="stylesheet" type="text/css" href="/vendor/jquery-ui.min.css">
 	
 	<!--Dev Created Styles-->
 	<link rel="stylesheet" type="text/css" href="/css/sprite.css">
@@ -57,7 +80,7 @@
 		<span class="icon"><div class="sprite chart_organisation_add"></div>New</span>
 	</div>
 	<div name="ribbon_view" id="ribbon_view" class="ribbon">
-		<span class="icon"><div class="sprite comments"></div>Chat</span>
+		<span class="icon" onclick="$('#wandering_chat').show();"><div class="sprite comments"></div>Chat</span>
 		<span class="icon"><div class="sprite error"></div>Errors</span>
 		<span class="icon"><div class="sprite funnel"></div>Filter</span>
 	</div>
@@ -73,7 +96,8 @@
 	<canvas name="ui" id="ui"></canvas>
 	
 	<!--Wandering Divs-->
-		<div name="wandering_font_style" id="wandering_font_style" class="wander_div" style="display: none;">
+	<!--Font Styles-->
+	<div name="wandering_font_style" id="wandering_font_style" class="wander_div" style="display: none;">
 		<div name="div_font_style_bar" id="div_font_style_bar" class="wandering_bar">
 			<div class="sprite cross" onclick="closeFont()"></div>
 		</div>
@@ -139,5 +163,22 @@
 			</div>
 		</div>
 	</div>
-  </body>
+	
+	<!--Chat Window-->
+	<div name="wandering_chat" id="wandering_chat" class="wander_div" style="display: none;">
+		<div name="wandering_chat_main" id="wandering_chat_main">
+			<div name="div_chat_bar" id="div_chat_bar" class="wandering_bar">
+				<div class="sprite sprite_hover cross" onclick="$('#wandering_chat').hide();"></div>
+			</div>
+			<div name="wandering_chat_main_two" id="wandering_chat_main_two" style="width: 500px; height: 300px;">
+				<div name="chat_window" id="chat_window"></div>
+				<textarea name="txt_message" id="txt_message"></textarea>
+			</div>
+		</div>
+		<button class="centered_button" onclick="sendChat()";>Submit</button>
+	</div>
+	
+	<div name="block_div" id="block_div"></div>
+	<div name="block_div_message" id="block_div_message"></div>
+</body>
 </html>

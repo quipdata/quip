@@ -43,11 +43,18 @@ function getObjPointerParentHelper( _obj, pointer, _lvls ){
 	return getObjPointerParentHelper( nextObj, pointer.substring( slash ), _lvls - 1 );
 }
 
+/*	getPointerUUID: Retruns the last peice for a JSON Pointer
+ * 	i.e. if #/ex/12345 were passed into pointer 12345 would be
+ * 	returned.
+ * 
+ * 	Parmas: 
+ * 	_pointer: the string to be parsed.
+ */
 function getPointerUUID( _pointer ){
 	var id = _pointer;
 	var found = false;
 	var i = id.length - 1;
-	while( id[i] != '/' )
+	while( id[i] != '/' && i > -1 )
 		i--;
 		
 	if( id[i] == '/' ){

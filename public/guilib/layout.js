@@ -54,3 +54,14 @@ function fontStyleStyleClick( _style, _character ){
 	
 	$('#font_style_style').val( value );
 }
+
+function openBlockingAlert( _message ){
+	$('#block_div_message').html( _message );
+	$('#block_div').show();
+	$('#block_div_message').show();
+}
+
+function closeBlockingAlert(){
+	$('#block_div').hide();
+	$('#block_div_message').hide();
+}
