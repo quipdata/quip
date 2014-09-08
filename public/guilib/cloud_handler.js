@@ -206,7 +206,7 @@ function setListeners(){
 	modelObjects.on( 'value', function( childSnapshot ){
 		cloudUpdateNoVersion( model, childSnapshot, false );
 		if( childSnapshot.val() == true ){
-			refresh();//Change to startUID
+			//Add startUID
 			var modelObjects = fbModel.child( 'loaded' );
 			modelObjects.off( 'child_added' );
 			modelObjects.off( 'child_changed' );

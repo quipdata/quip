@@ -5,17 +5,19 @@
     <title>QuipData UI Unit Test</title>
 	
 	<!--Foreign Libraries-->
-	<script src='/guilib/firebase_1.0.11.js'></script>
-	<script src='/guilib/jquery-2.1.0.min.js'></script>
-	<script src="/guilib/kinetic-v5.1.0.min.js"></script>
-	<script src='/guilib/uuid.js'></script>
+	<script src='https://cdn.firebase.com/js/client/1.0.11/firebase.js'></script>
+	<script src='/vendor/jquery-2.1.1.min.js'></script>
+	<script src='/vendor/jquery-ui.min.js'></script>
+	<script src='/vendor/kinetic-v5.1.0.min.js'></script>
+	<script src='/vendor/uuid.js'></script>
 	
 	<!--Unit Test Libraries-->
-	<script src='/guilib/unittestlib/mocha.js'></script>
-	<script src='/guilib/unittestlib/chai.js'></script>
-	<script src='/guilib/unittestlib/json_equals.js'></script>
+	<script src='/vendor/mocha.js'></script>
+	<script src='/vendor/chai.js'></script>
+	<script src='../json_equals.js'></script>
 	
 	<!--Dev Created Libraries-->
+	<script src='/guilib/layout.js'></script>
 	<script src='/guilib/functions.js'></script>
 	<script src="/guilib/kinetic.prototype.js"></script>
 	<script src="/guilib/kinetic+.js"></script>
@@ -26,7 +28,7 @@
 	
 	<!--CSS--->
 	<!--Unit Test CSS-->
-	<link rel="stylesheet" type="text/css" href="css/mocha.css">
+	<link rel="stylesheet" type="text/css" href="/vendor/mocha.css">
 </head>
 <body>
 	<script>
@@ -49,7 +51,6 @@
 	</script>
 	<div name="mocha" id="mocha"></div>
 	<div name="transaction" id="transaction" style="display: none;"></div>
-	<div name="asdf" id="asdf"></div>
 
     <script>mocha.setup('bdd')</script>
     <script>expect = chai.expect</script>

@@ -2,205 +2,183 @@
 <head>
 	<!--Foreign Libraries-->
 	<script src='https://cdn.firebase.com/js/client/1.0.11/firebase.js'></script>
-	<script src='/guilib/jquery-2.1.0.min.js'></script>
-	<script src="/guilib/kinetic-v5.1.0.min.js"></script>
-	<script src='/guilib/uuid.js'></script>
+	<script src='/vendor/jquery-2.1.1.min.js'></script>
+	<script src='/vendor/jquery-ui.min.js'></script>
+	<script src='/vendor/kinetic-v5.1.0.min.js'></script>
+	<script src='/vendor/uuid.js'></script>
 
 	<!--Dev Created Libraries-->
 	<script src='/guilib/functions.js'></script>
+	<script src='/guilib/layout.js'></script>
+	<script src='/guilib/chat.js'></script>
 	<script src="/guilib/kinetic.prototype.js"></script>
 	<script src="/guilib/kinetic+.js"></script>
 	<script src="/guilib/cloud_handler.js"></script>
 	<script src="/guilib/transaction.js"></script>
 	<script src="/guilib/transaction.cloud.js"></script>
 	<script src="/guilib/error_handler.js"></script>
+	
+	<script>
+		$( document ).ready(function(){
+			//Set up layout
+			selectRibbon( 'ribbon_view' );
+			$( "#wandering_font_style" ).draggable({ handle : "#div_font_style_bar" });
+			$( "#wandering_chat" ).draggable({ handle : "#div_chat_bar" })
+				.resizable({ 
+					alsoResize : "#wandering_chat_main #wandering_chat_main_two"
+					, minHeight: 260
+				});
+			
+			//Start Firebase
+			var fbModelRef = '{{FirebaseRef}}';
+			var userID = '{{UserUUID}}';
+			var userName = '{{UserName}}';
+			
+			var model = {};
+			var errors = [];
+			
+			var fileUUID = getPointerUUID( fbModelRef );
+			var fbChatRef = fbModelRef.replace( '/files/', '/chat/' );
+			
+			var fbModel = new Firebase( fbModelRef );
+			var fbChat = new Firebase( fbChatRef );
+			
+			fbModel.once('value', function(data) {
+				model = data.val();
+				setListeners();
+			}, function(err){
+				openBlockingAlert( 'Could not start the application. Please try again latter.' );
+				throwError( 'index', 'Start Up', 'Firebase failed to start', true );
+			});
+			
+			fbChat.once('value', function(data) {
+				startChat();
+			}, function(err){
+				openBlockingAlert( 'Could not start the application. Please try again latter.' );
+				throwError( 'index', 'Start Up', 'Firebase chat failed to start', true );
+			});
+		});
+    </script>
+	
+	<!--CSS--->
+	<!--Foreign Styles-->
+	<link rel="stylesheet" type="text/css" href="/vendor/jquery-ui.min.css">
+	
+	<!--Dev Created Styles-->
+	<link rel="stylesheet" type="text/css" href="/css/sprite.css">
+	<link rel="stylesheet" type="text/css" href="/css/gui.css">
 </head>
 <body>
-	<button onclick="refresh()">Refresh</button>
-	<div name="errors" id="errors" style="min-width: 800px;display: none;"></div>
-	<div name="console" id="console" style="border-style: solid;min-width: 800px;min-height: 500px;">Loading...</div>
-	<button onclick="refresh()">Refresh</button>
-    <script>
-    	var fbModel = new Firebase('{{FirebaseRef}}');
-
-    	fbModel.auth("{{fb_token}}", function(error) {
-    		if(error) {
-    			console.log("Login Failed!", error);
-    		} else {
-    			console.log("Login Succeeded!");
-    		}
-    	});
-
-    	var userID = '{{UserUUID}}';
-    	var model = {};
-    	var errors = [];
-
-		function test(){
-			var newModelID = uuid.v4();
-
-			var actions = [
-				{	"objectID" : "#/Model/Model/ModelObjects/" + newModelID,
-					"commandType" : "insert",
-					"value" : {
-					    "id": "#/Model/Model/ModelObjects/" + newModelID,
-					    "name": "",
-					    "type": "Object",
-					    "notes": "",
-					    "ModelRelationshipConnectors": { "empty":"" }
-					}
-				}
-			]
-
-			var trans = createTransaction( "Model", actions );
-
-			var newID = uuid.v4();
-			var objID = uuid.v4();
-
-			var visualActions = [
-				{	"objectID" : "#/VisualModel/groups/" + newID,
-					"commandType" : "insert",
-					"value" : {
-					    "type": "Object",
-					    "id": "#/VisualModel/groups/"  + newID,
-					    "modelID": "#/Model/Model/ModelObjects/" + newModelID,
-					    "selectedBy": "default",
-					    "attr": {
-							x: 100,
-							y: 100,
-							draggable: true
-						},
-					    "function": {},
-					    "objects": {}
-					}
-				}
-			]
-
-			visualActions[0]['value']['objects'][objID] = {
-			    "id": "#/VisualModel/groups/" + newID + "/objects/" + objID,
-			    "modelID": "#/Model/Model/ModelObjects/" + newModelID,
-			    "class": "Rect",
-			    "attr": {
-					width: 40,
-					height: 40,
-					stroke: 'black',
-					strokeWidth: 1,
-					cornerRadius: 8,
-					fill: 'white',
-					name: 'content'
-				},
-			    "function": {},
-			    "links": {"empty":""}
-			}
-
-			var vaString = JSON.stringify( visualActions );
-			var va2 = $.parseJSON( vaString );
-			va2[0].commandType = 'update';
-
-			objID = uuid.v4();
-
-			va2[0]['value']['objects'][objID] = {
-			    "id": "#/VisualModel/groups/" + newID + "/objects/" + objID,
-			    "modelID": "#/Model/Model/ModelObjects/" + newModelID,
-			    "class": "Text",
-			    "attr": {
-					x: 5,
-					y: 10,
-					fontSize: 10,
-					fontFamily: 'Calibri',
-					fill: 'black',
-					text: 'Person'
-			  	},
-			    "function": {},
-			    "links": {"empty":""}
-			}
-
-			var trans = createTransaction( "VisualModel", visualActions, trans );
-
-			processTransactions( trans );
-
-			var actions = [
-				{	"objectID" : "#/Model/Model/ModelObjects/" + newModelID,
-					"commandType" : "update",
-					"value" : {
-					    "id": "#/Model/Model/ModelObjects/" + newModelID,
-					    "name": "Person",
-					    "type": "Object",
-					    "notes": "",
-					    "ModelRelationshipConnectors": { "empty":"" }
-					}
-				}
-			]
-
-			var trans2 = createTransaction( "Model", actions );
-
-			var trans2 = createTransaction( "VisualModel", va2, trans2 );
-
-			processTransactions( trans2 );
-
-			var comment = [
-				{	"objectID" : "#/VisualModel/comments/bc22185f-0d6c-468a-9267-54466f666821",
-					"commandType" : "insert",
-					"value" : {
-					    "id": "#/VisualModel/comments/bc22185f-0d6c-468a-9267-54466f666821",
-					    "selectedBy": "default",
-					    "attr": {
-							x: 100,
-							y: 100,
-							draggable: true
-						},
-					    "function": {},
-					    "objects": {}
-					}
-				}
-			]
-
-			objID = uuid.v4();
-
-			comment[0]['value']['objects'][objID] = {
-			    "id": "#/VisualModel/comments/bc22185f-0d6c-468a-9267-54466f666821/objects/" + objID,
-			    "class": "Rect",
-			    "attr": {
-					width: 40,
-					height: 40,
-					stroke: 'black',
-					strokeWidth: 1,
-					cornerRadius: 8,
-					fill: 'yellow',
-					name: 'content'
-				},
-			    "function": {},
-			    "links": {"empty":""}
-			}
-
-			var trans3 = createTransaction( "VisualModel", comment );
-
-			processTransactions( trans3 );
-		}
-
-		fbModel.once('value', function(data) {
-			model = data.val();
-			setListeners();
-			refresh();
-			test();
-
-			var modelObjects = fbModel.child( 'loaded' );
-			modelObjects.set(true);
-		});
-
-		function refresh(){
-			var sModel = JSON.stringify(model);
-
-			var output = JSONStringToHTML( sModel );
-
-			$('#console').html(output);
-
-			if( errors.length > 0 ){
-				var sErrors = JSON.stringify( errors );
-				var eOutput = JSONStringToHTML( sErrors );
-				$('#errors').html(eOutput)
-					.show();
-			}
-		}
-    </script>
-  </body>
+	<div name="which_ribbon" id="which_ribbon">
+		<span name="tab_ribbon_file" id="tab_ribbon_file" class="ribbon_tab" onclick="selectRibbon( 'ribbon_file' )">File</span>
+		<span name="tab_ribbon_view" id="tab_ribbon_view" class="ribbon_tab" onclick="selectRibbon( 'ribbon_view' )">View</span>
+	</div>
+	<div name="ribbon_file" id="ribbon_file" class="ribbon">
+		<span class="icon"><div class="sprite disk"></div>Save</span>
+		<span class="icon"><div class="sprite arrow_divide"></div>Save As</span>
+		<span class="icon"><div class="sprite folder"></div>Open</span>
+		<span class="icon"><div class="sprite chart_organisation_add"></div>New</span>
+	</div>
+	<div name="ribbon_view" id="ribbon_view" class="ribbon">
+		<span class="icon" onclick="$('#wandering_chat').show();"><div class="sprite comments"></div>Chat</span>
+		<span class="icon"><div class="sprite error"></div>Errors</span>
+		<span class="icon"><div class="sprite funnel"></div>Filter</span>
+	</div>
+	<div name="icons" id="icons">
+		<span class="icon"><div class="sprite entity"></div>Entity</span>
+		<span class="icon"><div class="sprite value"></div>Value</span>
+		
+		<br />
+		
+		<span class="icon"><div class="sprite object"></div>Objects</span>
+		<span class="icon"><div class="sprite entity"></div>Entity</span>
+	</div>
+	<canvas name="ui" id="ui"></canvas>
+	
+	<!--Wandering Divs-->
+	<!--Font Styles-->
+	<div name="wandering_font_style" id="wandering_font_style" class="wander_div" style="display: none;">
+		<div name="div_font_style_bar" id="div_font_style_bar" class="wandering_bar">
+			<div class="sprite cross" onclick="closeFont()"></div>
+		</div>
+		<div name="font_style" id="font_style">
+			<span onclick="$('#tb_font_family').toggle();"><strong>Font:</strong></span>
+			<table name="tbl_font_family" id="tbl_font_family">
+			<tr onclick="$('#tb_font_family').toggle();">
+				<td name="selected_font_family" id="selected_font_family" style="font-family: Calibri;">Calibri</td>
+				<td name="font_family_icon" id="font_family_icon"><div class="sprite bullet_toggle_plus"></div>
+			</tr>
+			<tbody name="tb_font_family" id="tb_font_family" style="display: none;">
+			<tr onclick="changeFontSelect( 'Arial' )"><td style="font-family: 'Arial'" colspan="2">Arial</td></tr>
+			<tr onclick="changeFontSelect( 'Arial Narrow' )"><td style="font-family: 'Arial Narrow'" colspan="2">Arial Narrow</td></tr>
+			<tr onclick="changeFontSelect( 'Calibri' )"><td style="font-family: 'Calibri'" colspan="2">Calibri</td></tr>
+			<tr onclick="changeFontSelect( 'Century Gothic' )"><td style="font-family: 'Century Gothic'" colspan="2">Century Gothic</td></tr>
+			<tr onclick="changeFontSelect( 'Comic Sans' )"><td style="font-family: 'Comic Sans'" colspan="2">Comic Sans</td></tr>
+			<tr onclick="changeFontSelect( 'Courier New' )"><td style="font-family: 'Courier New'" colspan="2">Courier New</td></tr>
+			<tr onclick="changeFontSelect( 'Georgia' )"><td style="font-family: 'Georgia'" colspan="2">Georgia</td></tr>
+			<tr onclick="changeFontSelect( 'Helvetica' )"><td style="font-family: 'Helvetica'" colspan="2">Helvetica</td></tr>
+			<tr onclick="changeFontSelect( 'Impact' )"><td style="font-family: 'Impact'" colspan="2">Impact</td></tr>
+			<tr onclick="changeFontSelect( 'Lucida Console' )"><td style="font-family: 'Lucida Console'" colspan="2">Lucida Console</td></tr>
+			<tr onclick="changeFontSelect( 'Lucida Bright' )"><td style="font-family: 'Lucida Bright'" colspan="2">Lucida Bright</td></tr>
+			<tr onclick="changeFontSelect( 'Palatino Linotype' )"><td style="font-family: 'Palatino Linotype'" colspan="2">Palatino Linotype</td></tr>
+			<tr onclick="changeFontSelect( 'Tahoma' )"><td style="font-family: 'Tahoma'" colspan="2">Tahoma</td></tr>
+			<tr onclick="changeFontSelect( 'Times New Roman' )"><td style="font-family: 'Times New Roman'" colspan="2">Times New Roman</td></tr>
+			<tr onclick="changeFontSelect( 'Trebuchet MS' )"><td style="font-family: 'Trebuchet MS'" colspan="2">Trebuchet MS</td></tr>
+			<tr onclick="changeFontSelect( 'Verdana' )"><td style="font-family: 'Verdana'" colspan="2">Verdana</td></tr>
+			</tbody>
+			</table>
+		
+			<div name="font_style_other" id="font_style_other">
+				<label for="font_size"><strong>Font Size: </strong></label>
+				<select name="font_size" id="font_size">
+					<option value="6">6</option>
+					<option value="7">7</option>
+					<option value="8" selected="true">8</option>
+					<option value="9">9</option>
+					<option value="10">10</option>
+					<option value="11">11</option>
+					<option value="12">12</option>
+					<option value="13">13</option>
+					<option value="14">14</option>
+					<option value="15">15</option>
+					<option value="16">16</option>
+					<option value="17">17</option>
+					<option value="18">18</option>
+					<option value="19">19</option>
+					<option value="20">20</option>
+				</select>
+				
+				<br />
+				<input name="font_style_style" id="font_style_style" type="hidden" value="" />
+				
+				<span name="font_style_bold" id="font_style_bold" class="font_style_style" onclick="fontStyleStyleClick( 'font_style_bold', 'b' )">
+					<div class="sprite bold"></div>	
+				</span>
+				<span name="font_style_italic" id="font_style_italic" class="font_style_style" onclick="fontStyleStyleClick( 'font_style_italic', 'i' )">
+					<div class="sprite italic"></div>	
+				</span>
+				<span name="font_style_underline" id="font_style_underline" class="font_style_style" onclick="fontStyleStyleClick( 'font_style_underline', 'u' )">
+					<div class="sprite underline"></div>	
+				</span>
+			</div>
+		</div>
+	</div>
+	
+	<!--Chat Window-->
+	<div name="wandering_chat" id="wandering_chat" class="wander_div" style="display: none;">
+		<div name="wandering_chat_main" id="wandering_chat_main">
+			<div name="div_chat_bar" id="div_chat_bar" class="wandering_bar">
+				<div class="sprite sprite_hover cross" onclick="$('#wandering_chat').hide();"></div>
+			</div>
+			<div name="wandering_chat_main_two" id="wandering_chat_main_two" style="width: 500px; height: 300px;">
+				<div name="chat_window" id="chat_window"></div>
+				<textarea name="txt_message" id="txt_message"></textarea>
+			</div>
+		</div>
+		<button class="centered_button" onclick="sendChat()";>Submit</button>
+	</div>
+	
+	<div name="block_div" id="block_div"></div>
+	<div name="block_div_message" id="block_div_message"></div>
+</body>
 </html>
