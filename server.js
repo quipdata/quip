@@ -139,6 +139,7 @@ router.get('/app', function(req, res) {
 	res.render('./gui/index', {
 		auth_token: req.user.fb_token,
 		UserUUID: req.user.user_uuid,
+		UserName: req.user.user_nickname,
 		FirebaseRef: fb
 	});
 });
