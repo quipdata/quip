@@ -1,6 +1,15 @@
+function cleanObjPointer( _pointer ){
+	if( _pointer == undefined ) return undefined
+	if( _pointer.substring( 0, 1) == '#' ) _pointer = _pointer.substring( 1 );
+	if( _pointer.substring( 0, 1) == '/' ) _pointer = _pointer.substring( 1 );
+	
+	return _pointer;
+}
+
 function getObjPointer( _obj, pointer ){
-	if( pointer.substring( 0, 1) == '#' ) pointer = pointer.substring( 1 );
-	if( pointer.substring( 0, 1) == '/' ) pointer = pointer.substring( 1 );
+	if( pointer == undefined ) return undefined;
+	
+	pointer = cleanObjPointer( pointer );
 	
 	var slash = pointer.indexOf( '/' );
 	if( slash < 0 ) return _obj[pointer];
@@ -16,8 +25,8 @@ function getObjPointer( _obj, pointer ){
 function getObjPointerParent( _obj, pointer, _lvlsUp ){
 	if( _lvlsUp == undefined ) _lvlsUp = 1;
 	
-	if( pointer.substring( 0, 1) == '#' ) pointer = pointer.substring( 1 );
-	if( pointer.substring( 0, 1) == '/' ) pointer = pointer.substring( 1 );
+	
+	pointer = cleanObjPointer( pointer );
 	
 	var lvls = pointer.split("/").length - 1;
 	lvls -= _lvlsUp;
@@ -29,8 +38,7 @@ function getObjPointerParentHelper( _obj, pointer, _lvls ){
 	if( _lvls == -1 ) 
 		return _obj;
 	
-	if( pointer.substring( 0, 1) == '#' ) pointer = pointer.substring( 1 );
-	if( pointer.substring( 0, 1) == '/' ) pointer = pointer.substring( 1 );
+	pointer = cleanObjPointer( pointer );
 	
 	var slash = pointer.indexOf( '/' );
 	if( slash < 0 ) return _obj[pointer];
@@ -72,6 +80,11 @@ function between( _test, _rangeA, _rangeB ){
 	return false;
 }
 
+//Requires JSON
+function cloneJSON( _JSON ){
+	return JSON.parse( JSON.stringify( _JSON ) );
+}
+
 function JSONStringToHTML( _JSON ){
 	var NBS = '&nbsp;&nbsp;';
 			
@@ -105,6 +118,13 @@ function JSONStringToHTML( _JSON ){
 	}
 	
 	return output;
+}
+
+function stripChar( _input ){
+	if( !_input || typeof _input != 'string' )
+		return _input;
+		
+	return _input.replace( /\D/g, '' );
 }
 
 if ( !Date.prototype.toISOString ) {

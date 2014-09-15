@@ -13,52 +13,18 @@
 	<script src='/guilib/chat.js'></script>
 	<script src="/guilib/kinetic.prototype.js"></script>
 	<script src="/guilib/kinetic+.js"></script>
+
+	<script src="/guilib/master.js"></script>
+	<script src="/guilib/transaction.js"></script>	
 	<script src="/guilib/cloud_handler.js"></script>
-	<script src="/guilib/transaction.js"></script>
 	<script src="/guilib/transaction.cloud.js"></script>
-	<script src="/guilib/error_handler.js"></script>
 	
-	<script>
-		$( document ).ready(function(){
-			//Set up layout
-			selectRibbon( 'ribbon_view' );
-			$( "#wandering_font_style" ).draggable({ handle : "#div_font_style_bar" });
-			$( "#wandering_chat" ).draggable({ handle : "#div_chat_bar" })
-				.resizable({ 
-					alsoResize : "#wandering_chat_main #wandering_chat_main_two"
-					, minHeight: 260
-				});
-			
-			//Start Firebase
-			var fbModelRef = '{{FirebaseRef}}';
-			var userID = '{{UserUUID}}';
-			var userName = '{{UserName}}';
-			
-			var model = {};
-			var errors = [];
-			
-			var fileUUID = getPointerUUID( fbModelRef );
-			var fbChatRef = fbModelRef.replace( '/files/', '/chat/' );
-			
-			var fbModel = new Firebase( fbModelRef );
-			var fbChat = new Firebase( fbChatRef );
-			
-			fbModel.once('value', function(data) {
-				model = data.val();
-				setListeners();
-			}, function(err){
-				openBlockingAlert( 'Could not start the application. Please try again latter.' );
-				throwError( 'index', 'Start Up', 'Firebase failed to start', true );
-			});
-			
-			fbChat.once('value', function(data) {
-				startChat();
-			}, function(err){
-				openBlockingAlert( 'Could not start the application. Please try again latter.' );
-				throwError( 'index', 'Start Up', 'Firebase chat failed to start', true );
-			});
-		});
-    </script>
+	<script src="/guilib/canvas.js"></script>
+	<script src="/guilib/canvas.orm_obj.js"></script>
+	
+	<script src="/guilib/orm_obj.js"></script>
+	
+	<script src="/guilib/error_handler.js"></script>
 	
 	<!--CSS--->
 	<!--Foreign Styles-->
@@ -67,6 +33,12 @@
 	<!--Dev Created Styles-->
 	<link rel="stylesheet" type="text/css" href="/css/sprite.css">
 	<link rel="stylesheet" type="text/css" href="/css/gui.css">
+	
+	<!--Start UI-->
+	<script>
+		//Start Firebase
+		var master = new Master( '{{FirebaseRef}}', '{{fb_token}}', '{{UserUUID}}', '{{UserName}}' );
+    </script>
 </head>
 <body>
 	<div name="which_ribbon" id="which_ribbon">
@@ -80,20 +52,20 @@
 		<span class="icon"><div class="sprite chart_organisation_add"></div>New</span>
 	</div>
 	<div name="ribbon_view" id="ribbon_view" class="ribbon">
-		<span class="icon" onclick="$('#wandering_chat').show();"><div class="sprite comments"></div>Chat</span>
+		<span name="ribbon_chat" id="ribbon_chat" class="icon" onclick="master.chat.toggle()"><div class="sprite comments"></div>Chat</span>
 		<span class="icon"><div class="sprite error"></div>Errors</span>
 		<span class="icon"><div class="sprite funnel"></div>Filter</span>
 	</div>
 	<div name="icons" id="icons">
-		<span class="icon"><div class="sprite entity"></div>Entity</span>
-		<span class="icon"><div class="sprite value"></div>Value</span>
+		<span name="icons_entity" id="icons_entity" class="icon" onclick="master.ormObj.toggle( 'entity' )"><div class="sprite entity"></div>Entity</span>
+		<span class="icon" onclick="master.canvas.ormObj.editName( 'VisualModel/groups/0292835f-1972-4375-bebd-245b9b58870b', 'test' )"><div class="sprite value"></div>Value</span>
 		
 		<br />
 		
 		<span class="icon"><div class="sprite object"></div>Objects</span>
 		<span class="icon"><div class="sprite entity"></div>Entity</span>
 	</div>
-	<canvas name="ui" id="ui"></canvas>
+	<div name="ui" id="ui"></div>
 	
 	<!--Wandering Divs-->
 	<!--Font Styles-->
@@ -168,17 +140,21 @@
 	<div name="wandering_chat" id="wandering_chat" class="wander_div" style="display: none;">
 		<div name="wandering_chat_main" id="wandering_chat_main">
 			<div name="div_chat_bar" id="div_chat_bar" class="wandering_bar">
-				<div class="sprite sprite_hover cross" onclick="$('#wandering_chat').hide();"></div>
+				<div class="sprite sprite_hover cross" onclick="master.chat.close();"></div>
 			</div>
 			<div name="wandering_chat_main_two" id="wandering_chat_main_two" style="width: 500px; height: 300px;">
 				<div name="chat_window" id="chat_window"></div>
 				<textarea name="txt_message" id="txt_message"></textarea>
 			</div>
 		</div>
-		<button class="centered_button" onclick="sendChat()";>Submit</button>
+		<button class="centered_button" onclick="master.chat.sendChat()";>Submit</button>
 	</div>
 	
-	<div name="block_div" id="block_div"></div>
-	<div name="block_div_message" id="block_div_message"></div>
+	<div name="block_div" id="block_div" style="display: none;"></div>
+	<div name="block_div_message" id="block_div_message" style="display: none;"></div>
+	
+	<!--Invisable Input for use with canvas-->
+	<input name="canvas_text" id="canvas_text" type="text" value="" style="display: none;" />
+	<span name="canvas_span" id="canvas_span"></span>
 </body>
 </html>

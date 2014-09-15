@@ -65,3 +65,70 @@ function closeBlockingAlert(){
 	$('#block_div').hide();
 	$('#block_div_message').hide();
 }
+
+function strobeIcon(){
+	
+}
+
+function openCanvasText( _x, _y, _defaultText, _closeOnEnter, _onKeypress, _onClose ){
+	if( _defaultText == undefined )
+		_defaultText = '';
+		
+	if( !$.isNumeric( _x ) || !$.isNumeric( _y ) ){
+		throwError( 'layout.js', 'openCanvasText', '_x or _y parameter were not numeric' );
+	} else {
+		_x = parseInt( _x );
+		_y = parseInt( _y );
+	}
+		
+	var width = parseInt( stripChar( $('#canvas_text').css('width') ) );
+	var height = parseInt( stripChar( $('#canvas_text').css('height') ) );
+	
+	_x -= ( width / 2 );
+		
+	$('#canvas_text').css({
+			top: _y,
+			left: _x
+		})
+		.val( _defaultText )
+		.show()
+		.focus()
+	
+	if( _onKeypress && typeof _onKeypress == 'function' ){
+		$('#canvas_text').on( 'keydown.canvasText', _onKeypress );
+	}
+
+	if( _closeOnEnter && typeof _closeOnEnter == 'boolean' ){
+		if( _onClose && typeof _onClose == 'function' ){
+			$('#canvas_text').on( 'keypress.canvasText', function( e ){
+				if( e.which == 13 || e.which == 10 ){
+					closeCanvasText( _onClose );
+				}	
+			});
+		} else {
+			$('#canvas_text').on( 'keypress.canvasText', function( e ){
+				if( e.which == 13 || e.which == 10 ){
+					closeCanvasText();
+				}	
+			});
+		}	
+	}
+}
+
+function closeCanvasText( _onClose ){
+	$('#canvas_text').hide();
+	
+	if( _onClose && typeof _onClose == 'function' ){
+		_onClose( $('#canvas_text').val() );
+	}
+	
+	$('#canvas_text').off( '.canvasText' );
+}
+
+function canvasTextWidth(){
+	$('#canvas_span').html( $('#canvas_text').val() );
+	var width = $('#canvas_span').css('width');
+	width = parseInt( stripChar( width ) );
+		
+	return width;
+}

@@ -521,6 +521,10 @@ function makeSizableHelper( _group, _x, _y, _name, _pointer ) {
 
 //	Run after adding all inital shapes to the group!!!
 function makeInteractive( _group ){
+	if( typeof _group == 'string' ){
+		_group = master.canvas.stage.find( '#' + _group )[0];
+	}
+	
 	maxWidth = _group.getWidth();
 	maxHeight = _group.getHeight();
 	

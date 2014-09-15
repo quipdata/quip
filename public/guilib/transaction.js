@@ -1,3 +1,26 @@
+function Transaction( _fbModelRef, _fbToken ){
+	this.fbModelRef = _fbModelRef;
+	this.fbModel = new Firebase( this.fbModelRef );
+	
+	this.fbModel.auth(_fbToken, function(error, result) {
+		if(error) {
+			openBlockingAlert( 'Could not start the application. Please try again latter.' );
+			throwError( 'index', 'Start Up', 'Firebase failed to start', true );
+		}
+	});
+	
+	this.fbModel.on('value', function(data) {
+		master.model = data.val();
+		if( master.model != null && master.model != undefined && typeof master.model['loaded'] == 'boolean' ){
+			data.ref().off( 'value' );
+			master.transaction.setListeners();
+		}
+	}, function(err){
+		openBlockingAlert( 'Could not start the application. Please try again latter.' );
+		throwError( 'index', 'Start Up', 'Firebase failed to start', true );
+	});
+}
+
 /*	createTransaction: helper function used to package transactions.
  * 	this function can only package 1 transaction, either a Model or
  * 	VisualModel. A single transaction can of course affect any number
@@ -20,7 +43,7 @@
  * 	_masterTran (optional) : if provided the transaction created by this function 
  * 	will be appended to this object.
  */
-function createTransaction( _transactionType, _actionsParams, _masterTran ){
+Transaction.prototype.createTransaction = function( _transactionType, _actionsParams, _masterTran ){
 	if( _transactionType == undefined || ( _transactionType != 'Model' && _transactionType != 'VisualModel' ) )
 		throwError( 'transactoin.js', 'createTransaction', '_transactionType not provided or not a valid value' );
 	if( _actionsParams == undefined ) 
@@ -53,7 +76,7 @@ function createTransaction( _transactionType, _actionsParams, _masterTran ){
 	trans[transID] = {
 	    "id": transPointer,
 	    "transactionType" : _transactionType,
-		"modifiedBy": userID,
+		"modifiedBy": master.userID,
 		"modifiedOn": modifiedOn,
 		"Actions": {}
 	}
@@ -96,7 +119,7 @@ function createTransaction( _transactionType, _actionsParams, _masterTran ){
 	var aTran = {};
 	for( tranName in trans ){
 		aTran = trans[ tranName ];
-		validateTransaction( aTran );
+		this.validateTransaction( aTran );
 	}
 	
 	return trans;
@@ -110,7 +133,7 @@ function createTransaction( _transactionType, _actionsParams, _masterTran ){
  * 	_transaction: the transaction to validate
  * 	_actionProcessed: is passed to validateAction
  */
-function validateTransaction( _transaction, _actionProcessed ){
+Transaction.prototype.validateTransaction = function( _transaction, _actionProcessed ){
 	if( _transaction == undefined )
 		throwError( 'transaction.js', 'validateTransaction', 'passed _transaction was undefined' );
 		
@@ -135,7 +158,7 @@ function validateTransaction( _transaction, _actionProcessed ){
 	for( actionName in _transaction.Actions ){
 		action = _transaction.Actions[ actionName ]; 
 		
-		validateAction( action, _actionProcessed );  
+		this.validateAction( action, _actionProcessed );  
 	} 
 } 
 
@@ -146,7 +169,7 @@ function validateTransaction( _transaction, _actionProcessed ){
  * 	_actionProcessed (optional): if this is parameter is defined checks that rely on the transaction
  * 	not having been processed yet will be bypassed
  */
-function validateAction( _action, _actionProcessed ){
+Transaction.prototype.validateAction = function( _action, _actionProcessed ){
 	if( _action == undefined )
 		throwError( 'transaction.js', 'validateAction', 'passed _action was undefined' );
 	
@@ -167,7 +190,7 @@ function validateAction( _action, _actionProcessed ){
 		throwError( 'transaction.js', 'validateAction', 'commandType is not valid' );
 		
 	if( _action.commandType != 'insert' && _actionProcessed == undefined ){
-		var obj = getObjPointer( model, _action.objectID )
+		var obj = getObjPointer( master.model, _action.objectID )
 		if( obj == undefined || typeof obj != 'object' )
 			throwError( 'transaction.js', 'validateAction', 'commandType is not insert and the objectID is not found' );
 	}
@@ -192,7 +215,7 @@ function validateAction( _action, _actionProcessed ){
  * 	Params: 
  * 	_transaction: a transaction as returned by createTransaction
  */
-function processTransactions( _transaction ){
+Transaction.prototype.processTransactions = function( _transaction ){
 	/*	A container used to create a super transaction stored above 
 	 * 	the model and visualModel transactions so that changes that 
 	 * 	affect both objects can be reversed at the same time.
@@ -201,47 +224,47 @@ function processTransactions( _transaction ){
 	
 	//Validate parameters
 	var name = ""
-	var transaction = {};
+	var newTransaction = {};
 	for( name in _transaction ){
-		transaction = _transaction[name];
+		newTransaction = _transaction[name];
 		
 		try{
-			validateTransaction( transaction );  
+			this.validateTransaction( newTransaction );  
 		}catch(err){
-			throwError( 'transaction.js', 'processTransactions', 'passed parameter was not valid', false );
 			criticalError();
+			throwError( 'transaction.js', 'processTransactions', 'passed parameter was not valid' );
 			return;
 		}
 	}
 	
 	//Loop through every transaction in the passed transaction
 	name = ""
-	transaction = {};
+	newTransaction = {};
 	for( name in _transaction ){
-		transaction = _transaction[name];
+		newTransaction = _transaction[name];
 		
 		//Stores transaction in approprate place in fullModelTrans
-		if( transaction.transactionType == 'Model' ){
-			fullModelTrans['ModelTransaction'] = transaction.id; 
+		if( newTransaction.transactionType == 'Model' ){
+			fullModelTrans['ModelTransaction'] = newTransaction.id; 
 		} else {
-			fullModelTrans['VisualModelTransaction'] = transaction.id;			
+			fullModelTrans['VisualModelTransaction'] = newTransaction.id;			
 		}
 		
 		//Process transaction locally
 		try{
-			processTransactionsHelper( name, transaction );	
+			this.processTransactionsHelper( name, newTransaction );	
 		}catch(err){
-			throwError( 'transaction.js', 'processTransactionsHelper', err.message, false );
 			criticalError();
+			throwError( 'transaction.js', 'processTransactionsHelper', err.message );
 			return;
 		}
 		
 		//Process transaction in the cloud (function is on transaction.cloud.js)
 		try{
-			processTransactionsCloudHelper( name, transaction );
+			this.processTransactionsCloudHelper( name, newTransaction );
 		}catch(err){
-			throwError( 'transaction.js', 'processTransactionsCloudHelper', err.message, false );
 			criticalError();
+			throwError( 'transaction.js', 'processTransactionsCloudHelper', err.message );
 		}
 	}
 	
@@ -249,10 +272,10 @@ function processTransactions( _transaction ){
 	 * 	back for local storage (function is on transaction.cloud.js)
 	 */
 	try{
-		storeFullModelTrans( fullModelTrans );
+		this.storeFullModelTrans( fullModelTrans );
 	}catch(err){
-		throwError( 'transaction.js', 'storeFullModelTrans', err.message, false );
 		criticalError();
+		throwError( 'transaction.js', 'storeFullModelTrans', err.message );
 	}
 }
 
@@ -264,8 +287,8 @@ function processTransactions( _transaction ){
  * 	_name: the name of the transaction, should be a UUID
  * 	_transaction: a single transaction as created by createTransaction  
  */
-function processTransactionsHelper( _name, _transaction ){
-	validateTransaction( _transaction );
+Transaction.prototype.processTransactionsHelper = function( _name, _transaction ){
+	this.validateTransaction( _transaction );
 	
 	// extracts actions from the passed transaction
 	var actions = _transaction.Actions;
@@ -277,7 +300,7 @@ function processTransactionsHelper( _name, _transaction ){
 		action = actions[actionID];
 		
 		//Get the reverse action from the object log
-		var reverseAction = getReverseAction( action, _transaction.transactionType );
+		var reverseAction = this.getReverseAction( action, _transaction.transactionType );
 		//Store returned reverseAction
 		action.reverseAction = reverseAction; 
 	}
@@ -286,9 +309,9 @@ function processTransactionsHelper( _name, _transaction ){
 	var transactions = {}
 	var transactionsPath = "" 
 	if( _transaction.transactionType == 'Model' ){
-		transactions = model.Model.Model.TransactionLog.Transactions;
+		transactions = master.model.Model.Model.TransactionLog.Transactions;
 	} else if( _transaction.transactionType == 'VisualModel' ) {
-		transactions = model.VisualModel.TransactionLog.Transactions;
+		transactions = master.model.VisualModel.TransactionLog.Transactions;
 	}
 	
 	//Store the transaction
@@ -299,7 +322,7 @@ function processTransactionsHelper( _name, _transaction ){
 		action = actions[actionID];
 		
 		//Add this new action to the action log
-		updateObjectLog( action, _transaction.transactionType );
+		this.updateObjectLog( action, _transaction.transactionType );
 	}
 	
 	//Loop over actions
@@ -307,7 +330,7 @@ function processTransactionsHelper( _name, _transaction ){
 		action = actions[actionID];
 		
 		//Load up local storage container for the action's value
-		var localObject = getObjPointer( model, action.objectID );
+		var localObject = getObjPointer( master.model, action.objectID );
 		
 		
 		if( action.value != undefined ){
@@ -320,7 +343,11 @@ function processTransactionsHelper( _name, _transaction ){
 		}
 		
 		//Perfomr the action
-		executeActions( action );
+		this.executeActions( action );
+		
+		if( _transaction.transactionType == 'VisualModel' ){
+			master.canvas.processModelUI( action.objectID, action.commandType );	
+		}
 	}
 }
 
@@ -337,17 +364,17 @@ function processTransactionsHelper( _name, _transaction ){
  * 	_action: the action for which to extract the last action performed
  * 	_transactionType: if this is a Model or VisualModel action
  */
-function getReverseAction( _action, _transactionType ){
-	validateAction( _action );
+Transaction.prototype.getReverseAction = function( _action, _transactionType ){
+	this.validateAction( _action );
 	
 	if( _transactionType != 'Model' && _transactionType != 'VisualModel' )
 		throwError( 'transaction.js', 'getReverseAction', '_transactionType are not valid' );
 	
 	//Get correct objectLog
 	if( _transactionType == 'Model' ){
-		var objectLogRoot = model.Model.Model.TransactionLog.ObjectLogs;
+		var objectLogRoot = master.model.Model.Model.TransactionLog.ObjectLogs;
 	} else if( _transactionType == 'VisualModel' )  {
-		var objectLogRoot = model.VisualModel.TransactionLog.ObjectLogs;
+		var objectLogRoot = master.model.VisualModel.TransactionLog.ObjectLogs;
 	}
 	
 	var objID = getPointerUUID( _action.objectID )
@@ -355,8 +382,8 @@ function getReverseAction( _action, _transactionType ){
 	
 	if( objectLog != undefined ){
 		//Get get current action from the head
-		var headPair = getObjPointer( model, objectLog.head );
-		var lastAction = getObjPointer( model, headPair.currentAction );
+		var headPair = getObjPointer( master.model, objectLog.head );
+		var lastAction = getObjPointer( master.model, headPair.currentAction );
 		
 		//Get previous Action
 		/*	If insert and previous action was delete then store a delete command as the reverse.
@@ -442,17 +469,17 @@ function getReverseAction( _action, _transactionType ){
  * 	_action: the action to be added to the object log
  * 	_transactionType: if this is a Model or VisualModel action 
  */
-function updateObjectLog( _action, _transactionType ){
-	validateAction( _action );
+Transaction.prototype.updateObjectLog = function( _action, _transactionType ){
+	this.validateAction( _action );
 	
 	if( _transactionType != 'Model' && _transactionType != 'VisualModel' )
 		throwError( 'transaction.js', 'getReverseAction', '_transactionType are not valid' );
 	
 	//Get correct objectLog
 	if( _transactionType == 'Model' ){
-		var objectLogRoot = model.Model.Model.TransactionLog.ObjectLogs;
+		var objectLogRoot = master.model.Model.Model.TransactionLog.ObjectLogs;
 	} else {
-		var objectLogRoot = model.VisualModel.TransactionLog.ObjectLogs;
+		var objectLogRoot = master.model.VisualModel.TransactionLog.ObjectLogs;
 	}
 	
 	var objID = getPointerUUID( _action.objectID )
@@ -481,14 +508,14 @@ function updateObjectLog( _action, _transactionType ){
  * 	Parmas: 
  * 	_action: action to be performed
  */
-function executeActions( _action ){
-	validateAction( _action );
+Transaction.prototype.executeActions = function( _action ){
+	this.validateAction( _action );
 	
 	//switch statement for each kind of commandType
 	switch( _action.commandType ){
 		case 'insert':
 		//add the obejct at the objectID location
-			var container = getObjPointerParent( model, _action.objectID );
+			var container = getObjPointerParent( master.model, _action.objectID );
 			var id = getPointerUUID( _action.objectID );
 
 			if( id != undefined )
@@ -496,7 +523,7 @@ function executeActions( _action ){
 			break;
 		case 'update':
 		//overwrite the object at the objectID with the passed object
-			var container = getObjPointerParent( model, _action.objectID );
+			var container = getObjPointerParent( master.model, _action.objectID );
 			var id = getPointerUUID( _action.objectID );			
 			
 			if( id != undefined )
@@ -504,7 +531,7 @@ function executeActions( _action ){
 			break;
 		case 'delete':
 		//delete the obejct at objectID
-			var container = getObjPointerParent( model, _action.objectID );
+			var container = getObjPointerParent( master.model, _action.objectID );
 			var id = getPointerUUID( _action.objectID );			
 			
 			if( id != undefined )

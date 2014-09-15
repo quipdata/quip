@@ -1,16 +1,16 @@
 function throwError( _source, _function, _message, _throw ){
-	errors[errors.length] = [ _source, _function, _message ];
+	master.errors[master.errors.length] = [ _source, _function, _message ];
+	console.log( "Error on file '" + _source + "' in function '" + _function + "' : '" + _message + "'" );
 	if( _throw == undefined || _throw )
 		throw new Error(_message);
 }
 
 function criticalError(){
-	//Lock UI
+	openBlockingAlert('There has been a critical error. Please wait while we restore the program!');
 	
-	fbModel.once('value', function(data) {
-		model = data.val();
-		//Unlock UI
+	master.transaction.fbModel.once('value', function(data) {
+		master.model = data.val();
+		master.canvas.reset();
+		setInterval( closeBlockingAlert(), 1000 );		
 	});
-	
-	alert('There has been a critical error. Please wait while we restore the program!');
 }

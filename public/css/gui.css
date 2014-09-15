@@ -106,7 +106,7 @@ div.ribbon{
 	margin-bottom: 20px;
 }
 
-span.icon{
+span.icon, span.icon_selected{
 	display: inline-block;
 	text-align: center;
 	width: 50px;
@@ -119,6 +119,15 @@ span.icon{
 span.icon:hover{
 	background-color: #D1EEEE;
 	border-color: #c8c8c8;
+}
+
+span.icon_selected{
+	background-color: #D1EEEE;
+	border-color: #c8c8c8;	
+}
+
+span.icon_selected:hover{
+	background-color: transparent;
 }
 
 table{
@@ -281,4 +290,32 @@ button.centered_button{
 	height: 400px;
 	width: 400px;
 	z-index: 9999;
+}
+
+#canvas_text{
+	position: absolute;
+    background: rgba(0, 0, 0, 0);
+    border: none;
+    outline: none;
+    z-index: 900;
+    width: 300px;
+    text-align: center;
+    font-family: Calibri, Arial, Helvetica, sans-serif;
+    font-size: .9em; 
+}
+
+#canvas_span{
+	white-space: pre;
+	display: none;
+	padding: 0;
+	font-family: Calibri, Arial, Helvetica, sans-serif;
+    font-size: .9em;
+}
+
+div.entity_selected{
+	cursor: copy;
+}
+
+div.value_selected{
+	cursor: copy;
 }

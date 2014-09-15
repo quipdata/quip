@@ -21,11 +21,11 @@ function pointerToRelativePath( _pointer ){
  * 	_name: the name of the transaction, should be a UUID
  * 	_transaction: a single transaction as created by createTransaction
  */
-function processTransactionsCloudHelper(  _name, _transaction ){
-	validateTransaction( _transaction, true );
+Transaction.prototype.processTransactionsCloudHelper = function(  _name, _transaction ){
+	this.validateTransaction( _transaction, true );
 	
 	//Stores the transaction in the cloud
-	storeTransaction( _name, _transaction );
+	this.storeTransaction( _name, _transaction );
 	
 	//Loop through every actions
 	var actions = _transaction.Actions;
@@ -37,10 +37,10 @@ function processTransactionsCloudHelper(  _name, _transaction ){
 		action = actions[actionID];
 	
 		//Makes the changes to the obejct log
-		storeObjectLog( action, _transaction.transactionType );
+		this.storeObjectLog( action, _transaction.transactionType );
 		
 		//Performs the action in the cloud
-		executeActionsCloud( action );
+		this.executeActionsCloud( action );
 	}	
 }
 
@@ -50,11 +50,11 @@ function processTransactionsCloudHelper(  _name, _transaction ){
  * 	Params:
  * 	_action: action to be performed
  */
-function executeActionsCloud( _action ){
-	validateAction( _action, true )
+Transaction.prototype.executeActionsCloud = function( _action ){
+	this.validateAction( _action, true )
 	
 	var path = pointerToRelativePath( _action.objectID );
-	var child = fbModel.child( path );
+	var child = this.fbModel.child( path );
 	
 	if( _action.commandType == 'delete' ){
 		child.remove();
@@ -70,8 +70,8 @@ function executeActionsCloud( _action ){
  * 	_name: the name of the transaction, should be a UUID
  * 	_transaction: a single transaction as created by createTransaction
  */
-function storeTransaction( _name, _transaction ){
-	validateTransaction( _transaction, true )
+Transaction.prototype.storeTransaction = function( _name, _transaction ){
+	this.validateTransaction( _transaction, true );
 	
 	/*	Get the correct path to the transaction and transaction log
 	 * based upon the transactionType 
@@ -85,10 +85,10 @@ function storeTransaction( _name, _transaction ){
 	}
 	transPath += '/' + _name;
 	
-	var transChild = fbModel.child( transPath );
+	var transChild = this.fbModel.child( transPath );
 	transChild.set( _transaction );	
 	
-	var transLogChild = fbModel.child( transLogPath );
+	var transLogChild = this.fbModel.child( transLogPath );
 	transLogChild.push( _transaction.id );
 }
 
@@ -99,19 +99,19 @@ function storeTransaction( _name, _transaction ){
  * 	_action: the action to be added to the object log
  * 	_transactionType: if this is a Model or VisualModel action
  */
-function storeObjectLog( _action, _transactionType ){
+Transaction.prototype.storeObjectLog = function( _action, _transactionType ){
 	//Validate parameters
-	validateAction( _action, true );
+	this.validateAction( _action, true );
 	
 	if( _transactionType != 'Model' && _transactionType != 'VisualModel' )
 		throwError( 'transaction.js', 'getReverseAction', '_transactionType are not valid' );
 	
 	//Get correct paths to storage point in the cloud
 	if( _transactionType == 'Model' ){
-		var objectLogRoot = model.Model.Model.TransactionLog.ObjectLogs;
+		var objectLogRoot = master.model.Model.Model.TransactionLog.ObjectLogs;
 		var path = 'Model/Model/TransactionLog/ObjectLogs';
 	} else {
-		var objectLogRoot = model.VisualModel.TransactionLog.ObjectLogs;
+		var objectLogRoot = master.model.VisualModel.TransactionLog.ObjectLogs;
 		var path = 'VisualModel/TransactionLog/ObjectLogs';
 	}
 	
@@ -127,14 +127,14 @@ function storeObjectLog( _action, _transactionType ){
 	//store local copy in the cloud
 	path += '/' + objectLogID;
 	
-	var child = fbModel.child( path );
+	var child = this.fbModel.child( path );
 	child.set( objectLog );
 }
 
 /*	storeFullModelTrans: takes pointers to one or more transactions and
  * 	stores in the in cloud so they can be unwound together
  */
-function storeFullModelTrans( _fullModelTrans ){
-	var child = fbModel.child( "TransactionLog" );
+Transaction.prototype.storeFullModelTrans = function( _fullModelTrans ){
+	var child = this.fbModel.child( "TransactionLog" );
 	child.push( _fullModelTrans )
 }
