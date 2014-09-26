@@ -16,7 +16,6 @@
 
 	<script src="/guilib/master.js"></script>
 	<script src="/guilib/transaction.js"></script>	
-	<script src="/guilib/cloud_handler.js"></script>
 	<script src="/guilib/transaction.cloud.js"></script>
 	
 	<script src="/guilib/canvas.js"></script>
@@ -57,12 +56,14 @@
 		<span class="icon"><div class="sprite funnel"></div>Filter</span>
 	</div>
 	<div name="icons" id="icons">
-		<span name="icons_entity" id="icons_entity" class="icon" onclick="master.ormObj.toggle( 'entity' )"><div class="sprite entity"></div>Entity</span>
-		<span class="icon" onclick="master.canvas.ormObj.editName( 'VisualModel/groups/0292835f-1972-4375-bebd-245b9b58870b', 'test' )"><div class="sprite value"></div>Value</span>
+		<script>closeAllAdd( 'icons_entity', function(){ master.ormObj.close( 'entity' ) } )</script>
+		<span name="icons_entity" id="icons_entity" class="icon" onclick="closeAll( 'icons_entity' );master.ormObj.toggle( 'entity' )"><div class="sprite entity"></div>Entity</span>
+		<script>closeAllAdd( 'icons_value', function(){ master.ormObj.close( 'value' ) } )</script>
+		<span name="icons_value" id="icons_value" class="icon" onclick="closeAll( 'icons_value' );master.ormObj.toggle( 'value' )"><div class="sprite value"></div>Value</span>
 		
 		<br />
 		
-		<span class="icon"><div class="sprite object"></div>Objects</span>
+		<span name="icons_mass_add" id="icons_mass_add" class="icon" onclick="master.ormObj.openMassAdd();"><div class="sprite object"></div>Objects</span>
 		<span class="icon"><div class="sprite entity"></div>Entity</span>
 	</div>
 	<div name="ui" id="ui"></div>
@@ -156,5 +157,15 @@
 	<!--Invisable Input for use with canvas-->
 	<input name="canvas_text" id="canvas_text" type="text" value="" style="display: none;" />
 	<span name="canvas_span" id="canvas_span"></span>
+	
+	<!--Mass Add Window-->
+	<div name="wandering_mass_add" id="wandering_mass_add" class="wander_div" style="display: none;">
+		<div name="wander_mass_add_bar" id="wander_mass_add_bar" class="wandering_bar">
+			<div class="sprite sprite_hover cross" onclick="master.ormObj.closeMassAdd();"></div>
+		</div>
+		<div name="wandering_mass_add_content" id="wandering_mass_add_content"></div>
+		<span onclick="master.ormObj.addOneForm();"><div class="sprite bullet_toggle_plus"></div> Add Object</span>
+		<button class="centered_button" onclick="master.ormObj.massAdd()";>Submit</button>
+	</div>
 </body>
 </html>

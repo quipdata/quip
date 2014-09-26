@@ -114,7 +114,7 @@ Canvas.prototype.processModelGroup = function( _id, _commandType ){
 		
 		if( group.length > 0 )
 			throwError( 'canvas.js', 'processModelGroup', 'command type of insert but the group already existes on the canvas.' );
-		
+			
 		group = new Kinetic.Group( obj.attr );
 		
 		if( obj.objects != undefined ){
@@ -132,50 +132,64 @@ Canvas.prototype.processModelGroup = function( _id, _commandType ){
 	
 	if( _commandType == 'update' ){
 		if( obj == undefined )
-			throwError( 'canvas.js', 'processModelGroup', 'command type of update but the object does not exist in the visual model' );
+			throwError( 'canvas.js', 'processModelGroup', 'command type of update but the object does not exist' );
 		
 		group = this.layer.find( '#' + _id );
-		group.setAttr( obj.attr );
 		
 		if( group.length == 0 )		
 			throwError( 'canvas.js', 'processModelGroup', 'command type of update but the group does not exist on the canvas' );
 			
-		if( obj.objects != undefined ){
-			for( var objRef in obj.objects ){
-				var childObj = obj.objects[objRef];
-				
-				var tempObj = group.find( '#' + cleanObjPointer( childObj.id ) );
-				
-				if( tempObj == undefined ){
-					tempObj = new Kinetic[childObj.class](
-						childObj.attr
-					);
-					group.add( tempObj );	
+		canvasGroup = group[0];
+		
+		canvasGroup.setAttrs( obj.attr );
+		
+		var children = canvasGroup.getChildren().toArray();
+		
+		for( var i = 0; i < children.length; i++ ){
+			var child = children[i];
+			
+			if( child.getId() != undefined ){
+				var visualModelChild = getObjPointer( master.model, child.getId() );
+				if( visualModelChild == undefined ){
+					child.destroy();
 				} else {
-					tempObj.attr( tempObj.attr );
+					child.setAttrs( visualModelChild.attr );
 				}
+			}
+		}
+		
+		for( var ref in obj.objects ){
+			var visualModelChild = obj.objects[ ref ];
+
+			var canvasChild = this.layer.find( '#' + cleanObjPointer( visualModelChild.id ) )[0];
+			
+			if( canvasChild == undefined ){
+				var tempObj = new Kinetic[ visualModelChild["class"] ](
+					visualModelChild.attr
+				);
+				canvasGroup.add( tempObj );
 			}
 		}
 	}
 	
 	if( _commandType == 'delete' ){
-		if( obj == undefined )
-			throwError( 'canvas.js', 'processModelGroup', 'command type of delete but the object does not exist' );
-		
 		group = this.layer.find( '#' + _id );
 		
-		if( group.length == 0 )		
-			throwError( 'canvas.js', 'processModelGroup', 'command type of delete but the group does not exist on the canvas' );
+		if( group.length > 0 ){
+			group = group[0];
 			
-		group.destory();	
+			group.destroy();
+		}
 	} else {
-		if( obj.functions != undefined ){
+		if( obj.functions != undefined && obj.functions != '' ){
 			this.callCallableFunctions( obj.functions )
 		}
 		
 		if( obj.objects != undefined ){
 			for( var objRef in obj.objects ){
-				if( tempObj.functions != undefined ){
+				var tempObj = obj.objects[ objRef ];
+				
+				if( tempObj.functions != undefined && tempObj.functions != '' ){
 					this.callCallableFunctions( tempObj.functions )
 				}
 			}

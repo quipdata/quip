@@ -31,6 +31,7 @@ function Master( _fbModelRef, _fbToken, _userID, _userName, _unitTest ){
 				alsoResize : "#wandering_chat_main #wandering_chat_main_two"
 				, minHeight: 260
 			});
+		$( "#wandering_mass_add" ).draggable({ handle : "#wander_mass_add_bar" });
 			
 		if( this.model == null || this.model == undefined || this.model.loaded == undefined || typeof this.model.loaded != 'boolean' || !this.model.loaded ){			
 			openBlockingAlert( 'Loading please wait...' );	

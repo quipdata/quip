@@ -62,6 +62,8 @@ function selectStyle(){
 		for( var group in Kinetic.isSelected ){
 			group = Kinetic.isSelected[ group ];
 			
+			resetAnchors( group );
+			
 			group.find('.topLeft')[0].show();
 			group.find('.topRight')[0].show();
 			group.find('.bottomRight')[0].show();
@@ -501,7 +503,9 @@ function makeSizableHelper( _group, _x, _y, _name, _pointer ) {
 	});
 	anchor.on('dragend', function() {
 		_group.setDraggable(true);
+		normalizeXY( _group );
 		this.getLayer().draw();
+		master.canvas.ormObj.visualOnlySync();
 	});
 	// add hover styling
 	anchor.on('mouseover', function() {
@@ -519,11 +523,82 @@ function makeSizableHelper( _group, _x, _y, _name, _pointer ) {
 	anchor.hide();
 }
 
+/*	If the minimum X or minimum Y of a child within a group is less than 0
+ * 	than adjust the group and its children so X or Y value is less than 0 
+ */
+function normalizeXY( _group ){
+	var minX = null;
+	var minY = null;
+	
+	_group.getChildren().each( function( child, n ){
+		if( minX = null || minX > child.x() ){
+			minX = child.x()
+		}
+		if( minY = null || minY > child.y() ){
+			minY = child.y()
+		}
+	});
+
+	if( minX < 0 )
+		_group.x( _group.x() + minX );
+	
+	if( minY < 0 )
+		_group.y( _group.y() + minY );
+
+	_group.getChildren().each( function( child, n ){
+		if( minX < 0 )
+			child.x( child.x() - minX );
+			
+		if( minY < 0 )
+			child.y( child.y() - minY );
+	});
+}
+
+function resetAnchors( _group ){
+	var maxWidth = 0;
+	var maxHeight = 0;
+	
+	_group.getChildren().each( function( child, n ){
+		if( child.name() != 'topLeft' && child.name() != 'topRight' &&  child.name() != 'bottomLeft' &&  child.name() != 'bottomRight' ){
+			if( child.getWidth() + child.x() > maxWidth )
+				maxWidth = child.getWidth() + child.x();
+				
+			if( child.getHeight() + child.y() > maxHeight )
+				maxHeight = child.getHeight() + child.y();
+		}
+	});
+	
+	_group.find( '.topLeft' )[0].position({ x: 0, y: 0 });
+	_group.find( '.topRight' )[0].position({ x: maxWidth, y: 0 });
+	_group.find( '.bottomLeft' )[0].position({ x: 0, y: maxHeight });
+	_group.find( '.bottomRight' )[0].position({ x: maxWidth, y: maxHeight });
+}
+
 //	Run after adding all inital shapes to the group!!!
 function makeInteractive( _group ){
 	if( typeof _group == 'string' ){
 		_group = master.canvas.stage.find( '#' + _group )[0];
 	}
+	
+	if( _group == undefined )
+		return;
+		
+	var nw = false, sw = false, se = false, ne = false;
+	var children = _group.getChildren().toArray();
+	for( var i = 0; i < children.length; i++ ){
+		var child = children[i];
+		if( child.getName() === 'topLeft' )
+			ne = true;
+		if( child.getName() === 'topRight' )
+			nw = true;
+		if( child.getName() === 'bottomLeft' )
+			sw = true;
+		if( child.getName() === 'bottomRight' )
+			se = true;
+	}
+	
+	if( nw && ne && se && sw )
+		return;
 	
 	maxWidth = _group.getWidth();
 	maxHeight = _group.getHeight();
@@ -584,8 +659,16 @@ function makeInteractive( _group ){
 	_group.on('mouseout', function() {
 		document.body.style.cursor = 'default';
   	});
+  	
+  	_group.on('dragend', function() {
+		master.canvas.ormObj.visualOnlySync();
+	});
+	
+	_group.on('dblclick dbltap', function(){
+		master.canvas.ormObj.openEditName( _group.id() );
+	});
+	
 }
-
 
 /*	Finds where two lines inersect when the lines are, each defined as a struct with below:
 {

@@ -13,6 +13,19 @@ function selectRibbon( _name ){
 		.addClass( 'ribbon_tab_selected' );
 }
 
+var objCloseAll = {};
+
+function closeAllAdd( _name, _func ){
+	objCloseAll[ _name ] = _func; 
+}
+
+function closeAll( _selected ){
+	for( var ref in objCloseAll ){
+		if( _selected !== ref )
+			objCloseAll[ref]();
+	}
+}
+
 function changeFontSelect( _value ){
 	$('#selected_font_family').html( _value );
 	$('#selected_font_family').css( "font-family", "'" + _value + "'" );
@@ -84,7 +97,7 @@ function openCanvasText( _x, _y, _defaultText, _closeOnEnter, _onKeypress, _onCl
 	var width = parseInt( stripChar( $('#canvas_text').css('width') ) );
 	var height = parseInt( stripChar( $('#canvas_text').css('height') ) );
 	
-	_x -= ( width / 2 );
+	//_x -= ( width / 2 );
 		
 	$('#canvas_text').css({
 			top: _y,

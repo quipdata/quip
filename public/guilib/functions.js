@@ -85,6 +85,26 @@ function cloneJSON( _JSON ){
 	return JSON.parse( JSON.stringify( _JSON ) );
 }
 
+/*	Creates a copy of the passed object with anything that is not 
+ *  acceptable in a JSON string removed.
+ */
+function cleanObjectforJSON( _attr ){
+	var output = {};
+	
+	for( var ref in _attr ){
+		var value = _attr[ref];
+		var type = typeof value;
+		
+		if( type === 'boolean' || type === 'number' || type === 'string' || value instanceof Array ){
+			output[ref] = _attr[ref];
+		} else if( type == 'object' ){
+			output[ref] = cleanObjectforJSON( value );
+		}
+	}
+	
+	return output;
+}
+
 function JSONStringToHTML( _JSON ){
 	var NBS = '&nbsp;&nbsp;';
 			
@@ -150,4 +170,14 @@ if ( !Date.prototype.toISOString ) {
     };
 
   }() );
+}
+
+function forEachIndexOf( _obj, _index ){
+	for( var ref in _obj ){
+		if( ref === _index ){
+			return _obj[ ref ];
+		}
+	}
+	
+	return undefined;
 }

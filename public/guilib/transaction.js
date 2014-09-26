@@ -21,6 +21,12 @@ function Transaction( _fbModelRef, _fbToken ){
 	});
 }
 
+Transaction.prototype.reset = function(){
+	var emptyModel = {"Model":{"Model":{"metadata":{"id":"","name":"","type":"","creator":"","createdOn":"","editors":"","modifiedDate":""},"ModelObjects":{"empty":""},"ModelRelationships":{"empty":""},"ModelRules":{"empty":""},"TransactionLog":{"Transactions":{"empty":""},"ObjectLogs":{"empty":""},"TransactionLog":{"empty":""}}},"ModelRefs":{"empty":""}},"VisualModel":{"metadata":{"id":"","name":"","type":""},"groups":{"empty":""},"links":{"empty":""},"comments":{"empty":""},"TransactionLog":{"Transactions":{"empty":""},"ObjectLogs":{"empty":""},"TransactionLog":{"empty":""}}},"TransactionLog":{"empty":""},"loaded":true}
+	
+	this.fbModel.set( emptyModel );
+}
+
 /*	createTransaction: helper function used to package transactions.
  * 	this function can only package 1 transaction, either a Model or
  * 	VisualModel. A single transaction can of course affect any number
