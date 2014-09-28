@@ -33,33 +33,15 @@
 	<link rel="stylesheet" type="text/css" href="/css/sprite.css">
 	<link rel="stylesheet" type="text/css" href="/css/gui.css">
 	
-	<!--Unit Test Scripts-->
-	<script src='/vendor/mocha.js'></script>
-	<script src='/vendor/chai.js'></script>
-	<script src='/unit_test/json_equals.js'></script>
-	<link rel="stylesheet" type="text/css" href="/vendor/mocha.css">
-	<link rel="stylesheet" type="text/css" href="/unit_test/mocha+.css">
-	
-	<script src="/unit_test/transaction/transaction.test.js"></script>
-	
 	<!--Start UI-->
 	<script>
-		var fbRef = 'https://vivid-fire-1112.firebaseio.com/test/transaction/1234' // + uuid.v4();
-		
-		//Test specific code to condition Firebase before testing
-		var tempFB = new Firebase( fbRef );
-		
+		fbRef = GetURLParameter('fbRef');
+	
 		//Start Firebase
-		var master = new Master( fbRef, '', '2eb6a7cc-c6bf-5018-be3b-c653dc023f38', 'Unit Test', localTransTest );
-		
-    	var emptyModel = {"Model":{"Model":{"metadata":{"id":"","name":"","type":"","creator":"","createdOn":"","editors":"","modifiedDate":""},"ModelObjects":{"empty":""},"ModelRelationships":{"empty":""},"ModelRules":{"empty":""},"TransactionLog":{"Transactions":{"empty":""},"ObjectLogs":{"empty":""},"TransactionLog":{"empty":""}}},"ModelRefs":{"empty":""}},"VisualModel":{"metadata":{"id":"","name":"","type":""},"groups":{"empty":""},"links":{"empty":""},"comments":{"empty":""},"TransactionLog":{"Transactions":{"empty":""},"ObjectLogs":{"empty":""},"TransactionLog":{"empty":""}}},"TransactionLog":{"empty":""},"loaded":false}
-	    tempFB.set( emptyModel );	
+		var master = new Master( fbRef, '', '2eb6a7cc-c6bf-5018-be3b-c653dc023f38', 'Unit Test' );
     </script>
 </head>
 <body>
-	<div name="transaction_remote" id="transaction_remote" style="display: none;"></div>
-	
-	
 	<div name="which_ribbon" id="which_ribbon">
 		<span name="tab_ribbon_file" id="tab_ribbon_file" class="ribbon_tab" onclick="selectRibbon( 'ribbon_file' )">File</span>
 		<span name="tab_ribbon_view" id="tab_ribbon_view" class="ribbon_tab" onclick="selectRibbon( 'ribbon_view' )">View</span>
@@ -186,16 +168,6 @@
 		<div name="wandering_mass_add_content" id="wandering_mass_add_content"></div>
 		<span onclick="master.ormObj.addOneForm();"><div class="sprite bullet_toggle_plus"></div> Add Object</span>
 		<button class="centered_button" onclick="master.ormObj.massAdd()";>Submit</button>
-	</div>
-	
-	<script>mocha.setup('bdd')</script>
-    <script>expect = chai.expect</script>
-	<script src="/unit_test/transaction/transaction.mocha.js"></script>
-	<div name="mocha_button" id="mocha_button">
-		<button onclick="$('#mocha_background').toggle();">Show/Hide Unit Tests</button>
-	</div>
-	<div name="mocha_background" id="mocha_background">
-		<div name="mocha" id="mocha"></div>
 	</div>
 </body>
 </html>

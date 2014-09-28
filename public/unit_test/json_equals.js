@@ -1,3 +1,4 @@
+var FB_UUID_REGEX = new RegExp( /-JXt.{16}/g );
 var UUID_REGEX = new RegExp( /[a-z0-9]{8}(-[a-z0-9]{4}){3}-[a-z0-9]{12}/g );
 var ISO_DATE = new RegExp( /20[0-9][0-9]-[0,1][0-9]-[0,1,2,3][0-9]T[0,1,2][0-9]:[0-9]{2}:[0-9]{2}.[0-9]{3}Z/ );
 
@@ -18,22 +19,25 @@ function JSONEqual( _json1, _json2, _parrentID ){
 		for( id2 in _json2 ){
 			//If id's are equal or both UUIDs
 			if( stringUUIDEqual( id1, id2 ) 
-				|| ( _parrentID == 'TransactionLog' && id1.substring( 0, 1 ) == '-' && id2.substring( 0, 1 ) == '-' )
+				|| ( _parrentID === 'TransactionLog' && id1.substring( 0, 1 ) === '-' && id2.substring( 0, 1 ) === '-' )
 			){
 				//If objects are of the same type
-				if( typeof _json1[id1] == typeof _json2[id2] ){
-					//If type ID referse to and object
-					if( typeof _json1[id1] == 'object' ){
+				if( typeof _json1[id1] === typeof _json2[id2] ){
+					//If array test if equal
+					if( _json1[id1] instanceof Array && arraysEqual( _json1[id1], _json2[id2] ) ){
+						good = true;
+						break;
+					//If type ID referse to an object
+					} else if( typeof _json1[id1] === 'object' ){
 						//Do a recursive search, if it comes back true then true, otherwise contiue to test
-						if( JSONEqual( _json1[id1], _json2[id2], id1 ) == true ){
+						if( JSONEqual( _json1[id1], _json2[id2], id1 ) === true ){
 							good = true;
 							break;
 						}
-					//If array test if equal
-					} else if( typeof _json1[id1] == 'array' && arraysEqual( _json1[id1], _json2[id2] ) ){
-						good = true;
-						break;
-					} else if ( typeof _json1[id1] == 'string' ){
+					/*	If data type is string if both sides are UUID or ISO Dates than set to true
+					 * 	otherwise compare values to test if true
+					 */
+					} else if ( typeof _json1[id1] === 'string' ){
 						if( stringUUIDEqual( _json1[id1], _json2[id2] ) ){
 							good = true;
 							break;
@@ -43,7 +47,7 @@ function JSONEqual( _json1, _json2, _parrentID ){
 						} else {
 							return false;
 						}
-					}else if( _json1[id1] == _json2[id2] ) {
+					} else if( _json1[id1] == _json2[id2] ) {
 						good = true;
 						break;
 					} else {
@@ -63,11 +67,13 @@ function JSONEqual( _json1, _json2, _parrentID ){
 }
 
 function stringUUIDEqual( _string1, _string2 ){
-	if( typeof _string1 != 'string' || typeof _string2 != 'string' )
+	if( typeof _string1 !== 'string' || typeof _string2 !== 'string' )
 		return false;
 	
 	_string1 = _string1.replace( UUID_REGEX, 'UUID' );
+	_string1 = _string1.replace( FB_UUID_REGEX, 'FBUUID' );
 	_string2 = _string2.replace( UUID_REGEX, 'UUID' );
+	_string2 = _string2.replace( FB_UUID_REGEX, 'FBUUID' );
 	
 	if( _string1 == _string2 )
 		return true;

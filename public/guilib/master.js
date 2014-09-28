@@ -12,10 +12,6 @@ function Master( _fbModelRef, _fbToken, _userID, _userName, _unitTest ){
 	this.transaction = new Transaction( this.fbModelRef, this.fbToken );
 	
 	this.canvas;
-
-	//Condition UI
-	//If unit test, there will be no UI, so don't run the following.
-	if( typeof _unitTest == 'boolean' && _unitTest ) return
 		
 	this.chat = new Chat( this.fbChatRef, this.fbToken, this.userName );
 	
@@ -38,5 +34,10 @@ function Master( _fbModelRef, _fbToken, _userID, _userName, _unitTest ){
 		}
 		
 		master.canvas = new Canvas();
+		
+		//Start unit tests, if any, after inital data load.
+		if( typeof _unitTest === 'function' ){
+			_unitTest();
+		}
 	});
 }

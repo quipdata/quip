@@ -1,0 +1,48 @@
+<html>
+<head>
+<title>Transaction Test</title>
+	<!--Foreign Libraries-->
+	<script src='https://cdn.firebase.com/js/client/1.0.11/firebase.js'></script>
+	<script src='/vendor/jquery-2.1.1.min.js'></script>
+	<script src='/vendor/uuid.js'></script>
+	
+	<script src='/vendor/mocha.js'></script>
+	<script src='/vendor/chai.js'></script>
+	<script src='/unit_test/json_equals.js'></script>
+	<link rel="stylesheet" type="text/css" href="/vendor/mocha.css">
+</head>
+<body>
+	<script>mocha.setup('bdd')</script>
+    <script>expect = chai.expect</script>
+	<script src="/unit_test/transaction/transaction.mocha.js"></script>
+	
+	<div name="mocha" id="mocha"></div>
+	<div name="transaction" id="transaction" style="display: none;"></div>
+
+    <script>mocha.setup('bdd')</script>
+    <script>expect = chai.expect</script>
+    <script src="transaction.test.js"></script>
+    
+	<script>
+		var fbRef = 'https://vivid-fire-1112.firebaseio.com/test/transaction/1234' // + uuid.v4();
+		
+		//Test specific code to condition Firebase before testing
+		var tempFB = new Firebase( fbRef );
+		
+    	var emptyModel = {"Model":{"Model":{"metadata":{"id":"","name":"","type":"","creator":"","createdOn":"","editors":"","modifiedDate":""},"ModelObjects":{"empty":""},"ModelRelationships":{"empty":""},"ModelRules":{"empty":""},"TransactionLog":{"Transactions":{"empty":""},"ObjectLogs":{"empty":""},"TransactionLog":{"empty":""}}},"ModelRefs":{"empty":""}},"VisualModel":{"metadata":{"id":"","name":"","type":""},"groups":{"empty":""},"links":{"empty":""},"comments":{"empty":""},"TransactionLog":{"Transactions":{"empty":""},"ObjectLogs":{"empty":""},"TransactionLog":{"empty":""}}},"TransactionLog":{"empty":""},"loaded":false}
+	    tempFB.set( emptyModel, function(){
+	    	setIFrames();
+	    });
+	    
+	    function setIFrames(){
+	    	$('#one').html('<iframe name="frame_one" id="frame_one" src="/unit_test/gui_index.html?fbRef=' + fbRef + '"></iframe>');
+	    	$('#two').html('<iframe name="frame_two" id="frame_two" src="/unit_test/gui_index.html?fbRef=' + fbRef + '"></iframe>');
+	    }
+	</script>
+	
+	<div name="one" id="one" style="display: none;"></div>
+	<div name="two" id="two" style="display: none;"></div>
+	
+	<button onclick="mocha.run();">Run</button>
+</body>
+</html>
