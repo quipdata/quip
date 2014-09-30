@@ -83,7 +83,7 @@ function strobeIcon(){
 	
 }
 
-function openCanvasText( _x, _y, _defaultText, _closeOnEnter, _onKeypress, _onClose ){
+function openCanvasText( _x, _y, _defaultText, _closeOnEnter, _closeOnClick, _onKeypress, _onClose ){
 	if( _defaultText == undefined )
 		_defaultText = '';
 		
@@ -107,12 +107,12 @@ function openCanvasText( _x, _y, _defaultText, _closeOnEnter, _onKeypress, _onCl
 		.show()
 		.focus()
 	
-	if( _onKeypress && typeof _onKeypress == 'function' ){
+	if( _onKeypress && typeof _onKeypress === 'function' ){
 		$('#canvas_text').on( 'keydown.canvasText', _onKeypress );
 	}
 
-	if( _closeOnEnter && typeof _closeOnEnter == 'boolean' ){
-		if( _onClose && typeof _onClose == 'function' ){
+	if( _closeOnEnter && typeof _closeOnEnter === 'boolean' ){
+		if( typeof _onClose === 'function' ){
 			$('#canvas_text').on( 'keypress.canvasText', function( e ){
 				if( e.which == 13 || e.which == 10 ){
 					closeCanvasText( _onClose );
@@ -126,16 +126,33 @@ function openCanvasText( _x, _y, _defaultText, _closeOnEnter, _onKeypress, _onCl
 			});
 		}	
 	}
+	
+	if( _closeOnClick && typeof _closeOnClick === 'boolean' ){
+		if( typeof _onClose === 'function' ){
+			$(html).on( 'click.canvasText', function( e ){
+				if( e.which == 13 || e.which == 10 ){
+					closeCanvasText( _onClose );
+				}	
+			});
+		} else {
+			$(html).on( 'click.canvasText', function( e ){
+				if( e.which == 13 || e.which == 10 ){
+					closeCanvasText();
+				}	
+			});
+		}
+	}
 }
 
 function closeCanvasText( _onClose ){
 	$('#canvas_text').hide();
 	
-	if( _onClose && typeof _onClose == 'function' ){
+	if( typeof _onClose === 'function' ){
 		_onClose( $('#canvas_text').val() );
 	}
 	
 	$('#canvas_text').off( '.canvasText' );
+	$(html).off( '.canvasText' );
 }
 
 function canvasTextWidth(){

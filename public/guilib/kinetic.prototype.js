@@ -28,6 +28,49 @@ Kinetic.Group.prototype.getHeight = function(){
 	return maxHeight;
 }
 
+/*	getInteractiveHeight: get the height of the group without
+ * 	the controls associated with an interactive group
+ * 
+ * 	returns (int):
+ * 	height of the group without the controls associated with 
+ * 	an interactive group
+ */
+Kinetic.Group.prototype.getInteractiveHeight = function(){
+	var children = this.getChildren();
+	
+	var maxHeight = 0;
+	
+	for( var i = 0; i < children.length; i++ ){
+		if( children[i].name() != 'topLeft' && children[i].name() != 'topRight' && children[i].name() != 'bottomRight' && children[i].name() != 'bottomLeft' ){
+			if( children[i].getHeight() + children[i].y() > maxHeight ){
+				maxHeight = children[i].getHeight() + children[i].y();
+			}	
+		}
+	}
+	
+	return maxHeight;
+}
+
+/*	getInteractiveWidth: get the width of the group without
+ * 	the controls associated with an interactive group
+ * 
+ * 	returns (int):
+ * 	height of the group without the controls associated with 
+ * 	an interactive group
+ */
+Kinetic.Group.prototype.getInteractiveWidth = function(){
+	var children = this.getChildren();
+	
+	var maxWidth = 0;
+	
+	for( var i = 0; i < children.length; i++ ){
+		if( children[i].getWidth() + children[i].x() > maxWidth )
+			maxWidth = children[i].getWidth() + children[i].x();
+	}
+	
+	return maxWidth;
+}
+
 Kinetic.Group.prototype.getTrueX = function(){
 	var output = this.x();
 	
