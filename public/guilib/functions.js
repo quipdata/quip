@@ -141,7 +141,7 @@ function JSONStringToHTML( _JSON ){
 }
 
 function stripChar( _input ){
-	if( !_input || typeof _input != 'string' )
+	if( typeof _input !== 'string' )
 		return _input;
 		
 	return _input.replace( /\D/g, '' );

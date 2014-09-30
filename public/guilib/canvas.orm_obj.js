@@ -45,8 +45,8 @@ function CanvasORMObj(){
 	 */
 	this.nameTempalte = {
 		x: 5,
-		y: .375,
-		fontSize: 10,
+		y: .5,
+		fontSize: '10pt',
 		fontFamily: 'Calibri',
 		fill: 'black',
 		text: 'REPLACE_ME',
@@ -60,8 +60,8 @@ function CanvasORMObj(){
 	 */
 	this.nameAndPKTemplate = {
 		x: 5,
-		y: .25,
-		fontSize: 10,
+		y: .375,
+		fontSize: '10pt',
 		fontFamily: 'Calibri',
 		fill: 'black',
 		text: 'REPLACE_ME',
@@ -218,7 +218,8 @@ CanvasORMObj.prototype.addObj = function( _type, _modelID, _x, _y ){
 
 /*	openEditName: opens the editor for changing the objects name
  * 	
- * 	Param: the _id of the object to be renamed
+ * 	Param: 
+ * 	_id: the visualModel id of the object to be renamed
  */
 CanvasORMObj.prototype.openEditName = function( _id ){
 	//If passed ID is a string change it to the object it points to
@@ -246,7 +247,10 @@ CanvasORMObj.prototype.openEditName = function( _id ){
 	}
 	
 	//Get current name if it exists and hide the name object
+	//Get the maxHeight of any object
 	var name = null;
+	var maxHeight = 0;
+	var rect;
 	for( var ref in _id.objects ){
 		var object = _id.objects[ref];
 		if( object.modelID != undefined && object.modelID.match( this.NAME_REG_EX ) ){
@@ -256,7 +260,16 @@ CanvasORMObj.prototype.openEditName = function( _id ){
 				objName[0].hide();
 				master.canvas.layer.draw();
 			}
-			break
+		}
+		
+		if( typeof object.attr.height !== 'undefined' ){
+			var height  = parseInt( stripChar( object.attr.height ) );
+			if( height  > maxHeight )
+				maxHeight = height;
+		}
+		
+		if( typeof object.class === 'string' && object.class === 'Rect' ){
+			rect = object;
 		}
 	}
 	
@@ -265,7 +278,7 @@ CanvasORMObj.prototype.openEditName = function( _id ){
 	
 	//Get location for the text box
 	var targetX = parseInt( attr.x ) + master.canvas.divX + this.nameTempalte.x;
-	var targetY = parseInt( attr.y ) + master.canvas.divY  + ( maxHeight / 2 ) + 5;
+	var targetY = parseInt( attr.y ) + master.canvas.divY  + ( maxHeight / 2 ) - 10;
 	
 	//Function to detect new width and adjust size of object as nessisary
 	var keypress = function(){
@@ -333,13 +346,16 @@ CanvasORMObj.prototype.editName = function( _id, _value ){
 	var objects = visualModel.objects;
 	
 	//If a name object already exists, extract it.
+	//Extract rect as well
 	var name = null;
+	var rect = null;
 	for( var ref in objects ){
 		var aObject = objects[ref];
-		if( aObject.modelID != undefined && aObject.modelID.match( this.NAME_REG_EX ) ){
-			name = object;
-			break
-		}
+		if( aObject.modelID != undefined && aObject.modelID.match( this.NAME_REG_EX ) )
+			name = aObject;
+
+		if( aObject.class === 'Rect' )
+			rect = aObject;
 	}
 	
 	/*	If the name is new, check to see if its the only text.
@@ -357,6 +373,9 @@ CanvasORMObj.prototype.editName = function( _id, _value ){
 				break
 			}
 		}
+		
+		//Clone the chosen template
+		template = cloneJSON( template );
 								
 		//Get new UUID
 		var objID = uuid.v4();
@@ -368,7 +387,7 @@ CanvasORMObj.prototype.editName = function( _id, _value ){
 		 */
 		template.text = _value;
 		template.id = _id + "/objects/" + objID;
-		template.y *= group.getInteractiveHeight();;
+		template.y *= group.getInteractiveHeight();
 		
 		newAction.value.objects[objID] = {
 		    "id": _id + "/objects/" + objID,

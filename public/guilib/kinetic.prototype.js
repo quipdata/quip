@@ -64,8 +64,11 @@ Kinetic.Group.prototype.getInteractiveWidth = function(){
 	var maxWidth = 0;
 	
 	for( var i = 0; i < children.length; i++ ){
-		if( children[i].getWidth() + children[i].x() > maxWidth )
-			maxWidth = children[i].getWidth() + children[i].x();
+		if( children[i].name() != 'topLeft' && children[i].name() != 'topRight' && children[i].name() != 'bottomRight' && children[i].name() != 'bottomLeft' ){
+			if( children[i].getWidth() + children[i].x() > maxWidth ){
+				maxWidth = children[i].getWidth() + children[i].x();
+			}
+		}
 	}
 	
 	return maxWidth;

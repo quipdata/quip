@@ -468,7 +468,9 @@ function makeSizableUpdate(activeAnchor) {
 		
 		for( var i = 0; i < children.length; i++ ){
 			if( children[i].name() != 'topLeft' && children[i].name() != 'topRight' && children[i].name() != 'bottomRight' && children[i].name() != 'bottomLeft' ){
-				children[i].width( children[i].getWidth() * widthRatio );
+				if( $.isNumeric( children[i].getWidth() ) )
+					children[i].width( children[i].getWidth() * widthRatio );
+				if( $.isNumeric( children[i].getHeight() ) )
 				children[i].height( children[i].getHeight() * heightRatio );
 
 				children[i].x( topLeft.x() + ( ( children[i].x() - minX ) * widthRatio ) );
@@ -555,18 +557,8 @@ function normalizeXY( _group ){
 }
 
 function resetAnchors( _group ){
-	var maxWidth = 0;
-	var maxHeight = 0;
-	
-	_group.getChildren().each( function( child, n ){
-		if( child.name() != 'topLeft' && child.name() != 'topRight' &&  child.name() != 'bottomLeft' &&  child.name() != 'bottomRight' ){
-			if( child.getWidth() + child.x() > maxWidth )
-				maxWidth = child.getWidth() + child.x();
-				
-			if( child.getHeight() + child.y() > maxHeight )
-				maxHeight = child.getHeight() + child.y();
-		}
-	});
+	var maxWidth = _group.getInteractiveWidth();
+	var maxHeight = _group.getInteractiveHeight();
 	
 	_group.find( '.topLeft' )[0].position({ x: 0, y: 0 });
 	_group.find( '.topRight' )[0].position({ x: maxWidth, y: 0 });
@@ -599,6 +591,12 @@ function makeInteractive( _group ){
 	
 	if( nw && ne && se && sw )
 		return;
+		
+	_group.getChildren().each(function( shape, n ){
+		if( shape.getClassName() === 'Rect' ){
+			shape.moveToBottom();
+		}
+	});
 	
 	maxWidth = _group.getWidth();
 	maxHeight = _group.getHeight();
@@ -666,8 +664,8 @@ function makeInteractive( _group ){
 	
 	_group.on('dblclick dbltap', function(){
 		master.canvas.ormObj.openEditName( _group.id() );
+		//deselect( _group );
 	});
-	
 }
 
 /*	Finds where two lines inersect when the lines are, each defined as a struct with below:
