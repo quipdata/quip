@@ -83,7 +83,11 @@ function strobeIcon(){
 	
 }
 
+var canvasTextOnCloseCallback = null;
+
 function openCanvasText( _x, _y, _defaultText, _closeOnEnter, _closeOnClick, _onKeypress, _onClose ){
+	closeCanvasText();
+	
 	if( _defaultText == undefined )
 		_defaultText = '';
 		
@@ -94,11 +98,6 @@ function openCanvasText( _x, _y, _defaultText, _closeOnEnter, _closeOnClick, _on
 		_y = parseInt( _y );
 	}
 		
-	var width = parseInt( stripChar( $('#canvas_text').css('width') ) );
-	var height = parseInt( stripChar( $('#canvas_text').css('height') ) );
-	
-	//_x -= ( width / 2 );
-		
 	$('#canvas_text').css({
 			top: _y,
 			left: _x
@@ -106,56 +105,57 @@ function openCanvasText( _x, _y, _defaultText, _closeOnEnter, _closeOnClick, _on
 		.val( _defaultText )
 		.show()
 		.focus()
+		
+	var width = canvasTextWidth();
+	width = ( width < 20 ) ? 20 : width + 20;
 	
-	if( _onKeypress && typeof _onKeypress === 'function' ){
+	$('#canvas_text').width( width );
+	
+	$('#canvas_text').on( 'keydown.canvasTextWidth', function(){
+		var width = canvasTextWidth();
+		width = ( width < 20 ) ? 20 : width + 20;
+	
+		$('#canvas_text').width( width );
+	});
+	
+	if( typeof _onKeypress === 'function' ){
 		$('#canvas_text').on( 'keydown.canvasText', _onKeypress );
 	}
+	
+	if( typeof _onClose === 'function' ){
+		canvasTextOnCloseCallback = _onClose;
+	} 
 
 	if( _closeOnEnter && typeof _closeOnEnter === 'boolean' ){
-		if( typeof _onClose === 'function' ){
-			setTimeout( function(){ 
-				$('#canvas_text').on( 'keypress.canvasText', function( e ){
-					if( e.which == 13 || e.which == 10 ){
-						setTimeout( function(){ closeCanvasText( _onClose ) }, 500 );
-					}	
-				});
-			}, 500 );
-		} else {
-			setTimeout( function(){ 
-				$('#canvas_text').on( 'keypress.canvasText', function( e ){
-					if( e.which == 13 || e.which == 10 ){
-						setTimeout( function(){ closeCanvasText() }, 500 );
-					}	
-				});
-			}, 500 );
-		}
+		setTimeout( function(){ 
+			$('#canvas_text').on( 'keypress.canvasText', function( e ){
+				if( e.which == 13 || e.which == 10 ){
+					setTimeout( function(){ closeCanvasText() }, 500 );
+				}
+			});
+		}, 500 );
 	}
 	
 	if( _closeOnClick && typeof _closeOnClick === 'boolean' ){
-		if( typeof _onClose === 'function' ){
-			setTimeout( function(){			
-				$("html").on( 'click.canvasText', function( e ){
-					closeCanvasText( _onClose )
-				});
-			}, 500 );
-		} else {
-			setTimeout( function(){ 
-				$("html").on( 'click.canvasText', function( e ){
-					closeCanvasText()
-				});
-			}, 500 );
-		}
+		setTimeout( function(){ 
+			$("html").on( 'click.canvasText', function( e ){
+				closeCanvasText()
+			});
+		}, 500 );
 	}
 }
 
-function closeCanvasText( _onClose ){
+function closeCanvasText(){
 	$('#canvas_text').hide();
 	
-	if( typeof _onClose === 'function' ){
-		_onClose( $('#canvas_text').val() );
+	if( typeof canvasTextOnCloseCallback === 'function' ){
+		canvasTextOnCloseCallback( $('#canvas_text').val() );
 	}
 	
+	canvasTextOnCloseCallback = null;
+	
 	$('#canvas_text').off( '.canvasText' );
+	$('#canvas_text').off( '.canvasTextWidth' );
 	$("html").off( '.canvasText' );
 }
 

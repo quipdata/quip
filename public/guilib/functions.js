@@ -22,9 +22,28 @@ function getObjPointer( _obj, pointer ){
 	return getObjPointer( nextObj, pointer.substring( slash ) );
 }
 
+function getObjPointerWithIntegrate( _obj, pointer, _integrateWith ){
+	if( typeof _integrateWith[ pointer ] !== 'undefined' ){
+		return _integrateWith[ pointer ];
+	}
+	
+	if( pointer == undefined ) return undefined;
+	
+	pointer = cleanObjPointer( pointer );
+	
+	var slash = pointer.indexOf( '/' );
+	if( slash < 0 ) return _obj[pointer];
+	
+	var segment = pointer.substring( 0, slash );
+	
+	var nextObj = _obj[segment];
+	if( nextObj == undefined ) return undefined;
+	
+	return getObjPointer( nextObj, pointer.substring( slash ) );
+}
+
 function getObjPointerParent( _obj, pointer, _lvlsUp ){
 	if( _lvlsUp == undefined ) _lvlsUp = 1;
-	
 	
 	pointer = cleanObjPointer( pointer );
 	
@@ -62,10 +81,10 @@ function getPointerUUID( _pointer ){
 	var id = _pointer;
 	var found = false;
 	var i = id.length - 1;
-	while( id[i] != '/' && i > -1 )
+	while( id[i] !== '/' && i > -1 )
 		i--;
 		
-	if( id[i] == '/' ){
+	if( id[i] === '/' ){
 		id = id.substring( i + 1 );
 		return id;
 	}
@@ -188,3 +207,62 @@ function GetURLParameter(sParam)
         }
     }
 }
+
+/*	returns the count of properties in the passed objects.
+ * 	If a property is an object it will not be traversed merly counted
+ */
+function getPropertyCount( _obj, _NoCountEmpty ){
+	if( typeof _obj !== 'object' )
+		return -1;
+		
+	var i = 0;
+	for( var ref in _obj ){
+		if( _NoCountEmpty !== true || ref !== 'empty' )
+			i++;
+	}	
+		
+	return i;
+}
+
+function JSONEquals( _json1, _json2 ){
+	for( var ref in _json1 ){
+		var aProp = _json1[ ref ];
+		
+		//Note type of is the only comparison performed on functions, these shouldn't be in JSON anyway...
+		if( typeof aProp !== typeof _json2[ ref ] ){
+			return false;
+		} else if( typeof aProp === 'object' && JSONEquals( aProp, _json2[ ref ] ) === false ){
+			return false;
+		} else if ( typeof aProp !== 'object' && typeof aProp !== 'function' && aProp !== _json2[ ref ] ){
+			return false;
+		}
+	}
+	
+	return true;
+}
+
+/*	Adds and equals function to an array that compare the two array.
+ * 	If the two array are not ordered identically false will be returned.
+ */ 
+ArrayEqualsFunc = function( _a ){
+	if (this === _a) return true;
+	if (this == null || _a == null) return false;
+	//We know this is an array so testing for it to be an array is redundant
+	if( typeof _a !== 'object' ) return false;
+	if( typeof _a.length === 'undefined' ) return false;
+	
+	if (this.length !== _a.length) return false;
+
+	for (var i = 0; i < this.length; ++i) {
+		if (this[i] !== _a[i]) return false;
+	}
+	
+	return true;
+}
+
+Object.defineProperty( Array.prototype, "equals", { 
+	value: ArrayEqualsFunc,
+	writable: false,
+	enumerable: false,
+	configurable: true
+});

@@ -117,7 +117,7 @@ span.icon, span.icon_selected{
 }
 
 span.icon:hover{
-	background-color: #D1EEEE;
+	background-color: #DADADA;
 	border-color: #c8c8c8;
 }
 
@@ -126,10 +126,20 @@ span.icon_selected{
 	border-color: #c8c8c8;	
 }
 
+label{
+	width: 100px;
+	display: inline-block;
+}
+
+label.thin_label{
+	width: 40px;
+	display: inline-block;
+}
+/*
 span.icon_selected:hover{
 	background-color: transparent;
 }
-
+*/
 table{
 	border-collapse: collapse;
 }
@@ -298,9 +308,9 @@ button.centered_button{
     border: none;
     outline: none;
     z-index: 900;
-    width: 300px;
+    width: 20px;
     font-family: Calibri, Arial, Helvetica, sans-serif;
-    font-size: 10pt; 
+    font-size: 9pt; 
 }
 
 #canvas_span{
@@ -308,15 +318,7 @@ button.centered_button{
 	display: none;
 	padding: 0;
 	font-family: Calibri, Arial, Helvetica, sans-serif;
-    font-size: 10pt;
-}
-
-div.entity_selected{
-	cursor: copy;
-}
-
-div.value_selected{
-	cursor: copy;
+    font-size: 9pt;
 }
 
 #wandering_mass_add{
@@ -351,4 +353,35 @@ div.value_selected{
 
 input.mass_add{
 	width: 120px;
+}
+
+span.apply_ok {
+	float: right;
+	margin: 10px;"
+}
+
+#wander_obj_prop_content {
+	min-height: 300px;
+	width: 400px;
+	padding: 15px;
+}
+
+#wander_line_prop_content {
+	width: 500px;
+	height: 300px;
+	padding: 15px;
+}
+
+#wander_line_prop_canvas{
+	width: 500px;
+	height: 300px;
+	background-color: white;
+}
+
+#unique_warning{
+	width: 475px;
+}
+
+#wander_line_prop_form{
+	padding: 5px;
 }

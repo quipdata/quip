@@ -3,7 +3,26 @@
  * 	a child of the Canvas object.
  */
 function CanvasORMObj(){
-	this.NAME_REG_EX = /#\/Model\/Model\/ModelObjects\/[a-z0-9]{8}(-[a-z0-9]{4}){3}-[a-z0-9]{12}\/name/
+	this.NAME_REG_EX = /Model\/Model\/ModelObjects\/[a-z0-9]{8}(-[a-z0-9]{4}){3}-[a-z0-9]{12}\/name/
+	
+	/*	todo: set objectID, value.id, and value.functions.makeInteractive.params[0] to the same value
+	 * 	set value.type to either [ 'entity', 'value' ]
+	 * 	set value.modelID to its value
+	 * 	set attr
+	 */
+	this.transactionTemplate = {
+		"objectID" : "VisualModel/groups/UUID",
+		"commandType" : "insert",
+		"value" : {
+		    "type": "",
+		    "id": "VisualModel/groups/UUID",
+		    "modelID": "Model/Model/ModelObjects/UUID",
+		    "selectedBy": "default",
+		    "attr": {},
+		    "functions": { "makeInteractive" : { "functionName" : "makeInteractive", "params" : [ "VisualModel/groups/UUID", "objects" ] } },
+		    "objects": {}
+		}
+	}
 
 	/*	todo: set x and y
 	 * 	id: set to a the proper json pointer to this object ending with a UUID
@@ -50,6 +69,7 @@ function CanvasORMObj(){
 		fontFamily: 'Calibri',
 		fill: 'black',
 		text: 'REPLACE_ME',
+		wrap: "none",
 		id: 'UUID'
   	}
 	
@@ -65,6 +85,7 @@ function CanvasORMObj(){
 		fontFamily: 'Calibri',
 		fill: 'black',
 		text: 'REPLACE_ME',
+		wrap: "none",
 		id: 'UUID'
   	}
   	
@@ -80,32 +101,9 @@ function CanvasORMObj(){
 		fontFamily: 'Calibri',
 		fill: 'black',
 		text: '(REPLACE_ME)',
+		wrap: "none",
 		id: 'UUID'
   	}
-  	
-  	//Set on keydown event that will delete all selected objects
-  	$('body').on( 'keydown.ormObjDelete', function( e ){
-  		//Check that key pressed is delete
-  		if( e.which === 46 ){
-  			//Get all select objects ID's and place them into an array
-  			var out = [];
-			for( var ref in Kinetic.isSelected ){
-				var group = Kinetic.isSelected[ ref ];
-				
-				var visualGroup = getObjPointer( master.model, group.id() );
-				
-				out[ out.length ] = visualGroup.modelID;
-			}
-			
-			//Deselect the objects
-			deselect();
-			//Send the ID to be delete to deleteObj in ORMObj 
-			master.ormObj.deleteObj( out );
-			
-			//Reset cursor
-			document.body.style.cursor = 'default';
-  		}
-  	});
 }
 
 /*	visualOnlySync: if the change to the object was visual only
@@ -137,6 +135,131 @@ CanvasORMObj.prototype.visualOnlySync = function(){
 		throwError( 'canvas.orm_obj.js', 'visualOnlySync', err.message, false );
 		return;
 	}
+}
+
+CanvasORMObj.prototype.saveProperties = function( _modelPK ){
+	var visualGroup = cloneJSON( master.ormObj.visualGroup );
+	
+	var pkProp = $('#obj_pk').val();
+	var nameProp = $('#obj_name').val();
+	var typeProp = $('#obj_type').val();
+	
+	var visualNameUUID = null
+	var visualName = null;
+	var visualPKUUID = null;
+	var visualPK = null;
+	var visualRectUUID = null;
+	var visualRect = null;
+	
+	var width = 0;
+	
+	for( var ref in visualGroup.objects ){
+	if( ref !== 'empty' ){
+		if( visualGroup.objects[ ref ].type === 'name' ){
+			visualNameUUID = ref;
+			visualName = visualGroup.objects[ ref ];
+		} else if ( visualGroup.objects[ ref ].type === 'pk' ) {
+			visualPKUUID = ref;
+			visualPK = visualGroup.objects[ ref ];
+		} else if ( visualGroup.objects[ ref ].className === 'Rect' ) {
+			visualRectUUID = ref;
+			visualRect = visualGroup.objects[ ref ];
+		}
+	}
+	}
+	
+	if( visualName != undefined && visualName.attr.text !== nameProp ){
+		visualGroup.objects[ visualNameUUID ].attr.text = nameProp;
+		visualGroup.objects[ visualNameUUID ].attr.x = this.nameTempalte.x
+		visualGroup.objects[ visualNameUUID ].attr.width = 'auto';
+		
+		var tempText = new Kinetic.Text( visualGroup.objects[ visualNameUUID ].attr );
+		width = tempText.width(); 
+	} else if ( visualName == undefined && nameProp !== '' ){
+		if( pkProp === '' ){
+			visualNameAttr = cloneJSON( this.nameTempalte );	
+		} else {
+			visualNameAttr = cloneJSON( this.nameAndPKTemplate );
+		}
+		var visualNameUUID = uuid.v4();
+
+		visualNameAttr.id = visualGroup.id + '/objects/' + visualNameUUID;
+		visualNameAttr.text = nameProp;
+		visualNameAttr.y *= visualRect.attr.height;
+		
+		var tempText = new Kinetic.Text( visualNameAttr );
+		width = tempText.width();
+		
+		visualGroup.objects[ visualNameUUID ] = {
+		    "id": visualNameAttr.id,
+		    "modelID": visualGroup.modelID + '/name',
+		    "parentID" : visualGroup.id, 
+		    "type" : "name",
+		    "className": "Text",
+		    "attr": visualNameAttr,
+		    "functions": {},
+		    "links": { "empty":"" }
+		};
+	}
+	
+	if( visualPK != undefined && pkProp === '' ){
+		delete visualGroup.objects[ visualPKUUID ];
+		
+		if( visualName != undefined ){
+			visualGroup.objects[ visualNameUUID ].attr.y = ( visualRect.attr.height * this.nameTempalte.y );
+		}
+	} else if ( visualPK != undefined && visualPK.attr.text !== pkProp ){
+		visualGroup.objects[ visualPKUUID ].attr.text = pkProp;
+		
+		var tempText = new Kinetic.Text( visualGroup.objects[ visualPKUUID ].attr );
+		width = ( width > tempText.width() ) ? width : tempText.width();
+	} else if ( visualPK == undefined && pkProp !== '' ){
+		visualPKAttr = cloneJSON( this.pkTemplate );
+		var visualPKUUID = uuid.v4();
+
+		visualPKAttr.id = visualGroup.id + '/objects/' + visualPKUUID;
+		visualPKAttr.text = '(' + pkProp + ')';
+		visualPKAttr.y *= visualRect.attr.height;
+		
+		var tempText = new Kinetic.Text( visualPKAttr );
+		width = ( width > tempText.width() ) ? width : tempText.width();
+		
+		visualGroup.objects[ visualPKUUID ] = {
+		    "id": visualPKAttr.id,
+		    "modelID": _modelPK,
+		    "parentID" : visualGroup.id, 
+		    "type" : "pk",
+		    "className": "Text",
+		    "attr": visualPKAttr,
+		    "functions": {},
+		    "links": { "empty":"" }
+		};
+		
+		if( visualName != undefined ){
+			visualGroup.objects[ visualNameUUID ].attr.y = ( visualRect.attr.height * this.nameAndPKTemplate.y );
+		}
+	}
+	
+	if( visualGroup.type != typeProp ){
+		visualGroup.type = typeProp;
+		
+		if( visualGroup.type === 'entity' ){
+			delete visualGroup.objects[ visualRectUUID ].attr.dash;
+		} else if( visualGroup.type === 'value' ) {
+			visualGroup.objects[ visualRectUUID ].attr.dash = cloneJSON( this.valueTemplate.dash );
+		}
+	}
+	
+	var rectWidth = visualGroup.objects[ visualRectUUID ].attr.width;
+	visualGroup.objects[ visualRectUUID ].attr.width = ( width + 10 > rectWidth ) ? width + 10 : rectWidth;
+	
+	return [
+		{	
+			"objectID" : visualGroup.id,
+			"commandType" : "update",
+			"value" : visualGroup
+		}
+	]
 }
 
 /*	addObj: add a new objects.
@@ -172,19 +295,18 @@ CanvasORMObj.prototype.addObj = function( _type, _modelID, _x, _y ){
 	groupAttr.id = "VisualModel/groups/" + newID;
 	
 	//Create transaction action the contains the new group
-	var visualActions = {	
-		"objectID" : "#/VisualModel/groups/" + newID,
-		"commandType" : "insert",
-		"value" : {
-		    "type": _type,
-		    "id": "VisualModel/groups/"  + newID,
-		    "modelID": "#/Model/Model/ModelObjects/" + _modelID,
-		    "selectedBy": "default",
-		    "attr": groupAttr,
-		    "functions": { "makeInteractive" : { "functionName" : "makeInteractive", "params" : [ "VisualModel/groups/"  + newID ] } },
-		    "objects": {}
-		}
-	}
+	/*	todo: set objectID, value.id, and value.functions.makeInteractive.params[0] to the same value
+	 * 	set type to either [ 'entity', 'value' ]
+	 * 	set value.modelID to its value
+	 * 	set attr
+	 */
+	var visualActions = cloneJSON( this.transactionTemplate );
+	visualActions.objectID = visualActions.objectID.replace( 'UUID', newID );
+	visualActions.value.id = cleanObjPointer( visualActions.objectID );
+	visualActions.value.functions.makeInteractive.params[0] = visualActions.value.id;
+	visualActions.value.modelID = visualActions.value.modelID.replace( 'UUID', _modelID );
+	visualActions.value.type = _type;
+	visualActions.value.attr = groupAttr;
 	
 	//Get the correct tempalte based upon the _type
 	if( _type === 'entity' ){
@@ -205,8 +327,10 @@ CanvasORMObj.prototype.addObj = function( _type, _modelID, _x, _y ){
 	//Add new rect to the visual action as a child object
 	visualActions['value']['objects'][objID] = {
 	    "id": "VisualModel/groups/" + newID + "/objects/" + objID,
-	    "modelID": "#/Model/Model/ModelObjects/" + _modelID,
-	    "class": "Rect",
+	    "modelID": "Model/Model/ModelObjects/" + _modelID,
+	    "parentID" : "VisualModel/groups/" + newID,
+	    "className": "Rect",
+	    "type" : _type + "Rect",
 	    "attr": rectAttr,
 	    "functions": {},
 	    "links": {"empty":""}
@@ -214,6 +338,236 @@ CanvasORMObj.prototype.addObj = function( _type, _modelID, _x, _y ){
 	
 	//return the assembled action
 	return visualActions;
+}
+
+/*	cloneCanvas: returns an exsact copy of the passed visual group ID
+ * 	as a canvas group. NOTE: this return value has the same IDs as well
+ * 	as all other properties. This will create ID conflicts if placed on
+ * 	the same stage as the original.
+ * 
+ * 	Params:
+ * 	_id: string pointer to the visual group you wish to clone.
+ * 
+ * 	Returns:
+ * 	A canvas object with the ID's removed.
+ */
+CanvasORMObj.prototype.cloneCanvas = function( _id ){
+	//Test to make sure the objects is in the correct container
+	if( _id.substring( 0, 18 ) !== 'VisualModel/groups' ){
+		throwError( 'canvas.js', 'cloneCanvas', 'Passed path was not for VisualModel or groups container' );
+	}
+	
+	//Get object
+	var visualObj = getObjPointer( master.model, _id );
+	
+	if( visualObj == undefined && _commandType !== 'delete' )
+		throwError( 'canvas.js', 'cloneCanvas', 'Passed path was not found' );
+	
+	visualObj = cloneJSON( visualObj );
+	if( visualObj.id )
+		visualObj.id = 'clone' + visualObj.id;
+	if( visualObj.attr.id )
+		visualObj.attr.id = 'clone' + visualObj.attr.id;
+	
+	for( var ref in visualObj.objects ){
+	if( ref !== 'empty' ){
+		var avisualObject = visualObj.objects[ ref ];
+		
+		if( avisualObject.id )
+			avisualObject.id = 'clone' + avisualObject.id;
+		if( avisualObject.attr.id )
+			avisualObject.attr.id = 'clone' + avisualObject.attr.id; 
+	}
+	}
+	
+	//Create group with passed attributes
+	var canvasGroup = new Kinetic.Group( visualObj.attr );
+	
+	//Create all of the group's children and add to the group
+	if( visualObj.objects != undefined ){
+		for( var objRef in visualObj.objects ){
+			var childObj = visualObj.objects[objRef];
+			var tempObj = new Kinetic[childObj.className](
+				childObj.attr
+			);
+			canvasGroup.add( tempObj );
+		}
+	}
+	
+	return canvasGroup;
+}
+
+CanvasORMObj.prototype.cloneCanvasDefault = function( _id ){
+	//Test to make sure the objects is in the correct container
+	if( _id.substring( 0, 18 ) !== 'VisualModel/groups' ){
+		throwError( 'canvas.js', 'cloneCanvasDefault', 'Passed path was not for VisualModel or groups container' );
+	}
+	
+	//Get object
+	var visualObj = getObjPointer( master.model, _id );
+	
+	if( visualObj == undefined && _commandType !== 'delete' )
+		throwError( 'canvas.js', 'cloneCanvasDefault', 'Passed path was not found' );
+	
+	visualObj = cloneJSON( visualObj );
+	if( visualObj.id )
+		visualObj.id = 'clone' + visualObj.id;
+	if( visualObj.attr.id )
+		visualObj.attr.id = 'clone' + visualObj.attr.id;
+	
+	for( var ref in visualObj.objects ){
+	if( ref !== 'empty' ){
+		var avisualObject = visualObj.objects[ ref ];
+		
+		if( avisualObject.id )
+			avisualObject.id = 'clone' + avisualObject.id;
+		if( avisualObject.attr.id )
+			avisualObject.attr.id = 'clone' + avisualObject.attr.id; 
+	}
+	}
+	
+	//Create group with passed attributes
+	var canvasGroup = new Kinetic.Group( visualObj.attr );
+	
+	//Create all of the group's children and add to the group
+	if( visualObj.objects != undefined ){
+		var nameText = null;
+		var nameCanvas = null;
+		var pkCanvas = null;
+		var pkText = null; 
+		
+		var width = 0;
+		
+		for( var objRef in visualObj.objects ){
+			var childObj = visualObj.objects[objRef];
+			
+			var attr = cloneJSON( childObj.attr );
+			if( attr == undefined ){
+				throwError( 'canvas.js', 'cloneCanvasDefault', 'Child object in visual group had no attr set.' );
+			}
+			
+			if( childObj.type === 'entityRect' ){
+				attr.width = this.entityTemplate.width;
+				attr.height = this.entityTemplate.height;
+			}
+			
+			if( childObj.type === 'valueRect' ){
+				attr.width = this.valueTemplate.width;
+				attr.height = this.valueTemplate.height;
+			}
+			
+			if( childObj.type === 'name' ){
+				nameText = childObj;
+				
+				if( attr.width )
+					delete attr.width;
+				if( attr.height )
+					delete attr.height;
+				
+				if( visualObj.type === 'entity' ){
+					var height = this.entityTemplate.height;
+				} else {
+					var height = this.valueTemplate.height;
+				}
+				
+				if( pkText === null ){
+					attr.x = this.nameTempalte.x;
+					attr.y = height * this.nameTempalte.y;
+				} else {
+					attr.x = this.nameAndPKTemplate.x;
+					attr.y = height * this.nameAndPKTemplate.y;
+				}
+			}
+			
+			if( childObj.type === 'pk' ){
+				pkText = childObj;
+				
+				if( attr.width )
+					delete attr.width;
+				if( attr.height )
+					delete attr.height;
+				
+				if( visualObj.type === 'entity' ){
+					var height = this.entityTemplate.height;
+				} else {
+					var height = this.valueTemplate.height;
+				}
+				
+				attr.x = this.pkTemplate.x;
+				attr.y = height * this.pkTemplate.y;
+				
+				var tempCanvas = tempObj = new Kinetic[childObj.className](
+					attr
+				);
+				
+				if( nameText !== null ){
+					nameCanvas.x( this.nameAndPKTemplate.x );
+					nameCanvas.y( height * this.nameAndPKTemplate.y );
+				}
+			}
+			
+			var tempObj = new Kinetic[childObj.className](
+				attr
+			);
+			canvasGroup.add( tempObj );
+			
+			if( childObj.type === 'name' ){
+				nameCanvas = tempObj;
+			} else if( childObj.type === 'pk' ){
+				pkCanvas = tempObj;
+			} else if ( childObj.className === 'Rect' ){				
+				rectCanvas = tempObj;
+				tempObj.moveToBottom();
+			}
+		}
+	}
+	
+	if( nameCanvas != undefined ){
+		width = nameCanvas.width(); 
+	}
+	
+	if( pkCanvas != undefined && pkCanvas.width() > width ){
+		width = pkCanvas.width();
+	}
+	
+	width += 10;
+	
+	if( width > rectCanvas.width() ){
+		if( width > ( rectCanvas.width() * 2 ) ){
+			width = rectCanvas.width() * 2
+			
+			if( nameCanvas != undefined ){
+				nameCanvas.width( width - 20 ); 
+			}
+			
+			if( pkCanvas != undefined ){
+				pkCanvas.width( width - 20 ); 
+			}
+		}
+		
+		rectCanvas.width( width );
+	} 
+	
+	return canvasGroup;
+}
+
+CanvasORMObj.prototype.canvasDefaultShell = function( _template ){
+	var groupAttr = cloneJSON( this.groupTemplate );
+	
+	var canvasGroup = new Kinetic.Group( groupAttr );
+	
+	var rectAttr = null
+	if( _template === 'entity' ){
+		rectAttr = cloneJSON( this.entityTemplate );
+	}else {
+		rectAttr = cloneJSON( this.valueTemplate );
+	}
+	
+	var canvasRect = new Kinetic.Rect( rectAttr );
+	
+	canvasGroup.add( canvasRect );
+	
+	return canvasGroup;
 }
 
 /*	openEditName: opens the editor for changing the objects name
@@ -239,23 +593,17 @@ CanvasORMObj.prototype.openEditName = function( _id ){
 	
 	var attr = _id.attr;
 	
-	//Set the minimum width to the default in the template
-	if( _id.type === 'value' ){
-		var minWidth = this.valueTemplate.width;
-	} else  {
-		var minWidth = this.entityTemplate.width;
-	}
-	
 	//Get current name if it exists and hide the name object
-	//Get the maxHeight of any object
+	//Get the maxWidth and maxHeight of any object
 	var name = null;
 	var maxHeight = 0;
+	var maxWidth = 0;
 	var rect;
 	for( var ref in _id.objects ){
 		var object = _id.objects[ref];
-		if( object.modelID != undefined && object.modelID.match( this.NAME_REG_EX ) ){
+		if( object.modelID != undefined && object.modelID.match( this.NAME_REG_EX ) != null ){
 			name = object.attr.text;
-			var objName = master.canvas.layer.find( '#' + object.id );
+			var objName = master.canvas.stage.find( '#' + object.id );
 			if( objName.length > 0 ){
 				objName[0].hide();
 				master.canvas.layer.draw();
@@ -268,7 +616,13 @@ CanvasORMObj.prototype.openEditName = function( _id ){
 				maxHeight = height;
 		}
 		
-		if( typeof object.class === 'string' && object.class === 'Rect' ){
+		if( typeof object.attr.width !== 'undefined' ){
+			var width = parseInt( stripChar( object.attr.width ) );
+			if( width > maxWidth )
+				maxWidth = width;
+		}
+		
+		if( typeof object.className === 'string' && object.className === 'Rect' ){
 			rect = object;
 		}
 	}
@@ -282,10 +636,10 @@ CanvasORMObj.prototype.openEditName = function( _id ){
 	
 	//Function to detect new width and adjust size of object as nessisary
 	var keypress = function(){
-		var min = minWidth;
-		var width = canvasTextWidth() + 10;
+		var min = maxWidth;
+		var width = canvasTextWidth() + 20;
 		if( width > min ){
-			var obj = master.canvas.layer.find( '#' + rect.attr.id )[0];
+			var obj = master.canvas.stage.find( '#' + rect.attr.id )[0];
 			obj.width( width );
 			
 			master.canvas.layer.draw();
@@ -297,8 +651,8 @@ CanvasORMObj.prototype.openEditName = function( _id ){
 		//Find name if it exists and set it back to show 
 		for( var ref in _id.objects ){
 			var object = _id.objects[ref];
-			if( object.modelID != undefined && object.modelID.match( this.NAME_REG_EX ) ){
-				var objName = master.canvas.layer.find( '#' + object.id );
+			if( object.modelID != undefined && object.modelID.match( this.NAME_REG_EX ) != null ){
+				var objName = master.canvas.stage.find( '#' + object.id );
 				if( objName.length > 0 )
 					objName[0].show();
 				break
@@ -336,7 +690,7 @@ CanvasORMObj.prototype.editName = function( _id, _value ){
 	}
 	
 	//Get the canvas group associated with _id. Throw an error if not found
-	var group = master.canvas.layer.find( '#' + _id );
+	var group = master.canvas.stage.find( '#' + _id );
 	if( group.length === 0 ){
 		throwError( 'canvas.orm_obj.js', 'editName', 'Passed ID must exsist on the canvas'  )
 	}
@@ -351,10 +705,10 @@ CanvasORMObj.prototype.editName = function( _id, _value ){
 	var rect = null;
 	for( var ref in objects ){
 		var aObject = objects[ref];
-		if( aObject.modelID != undefined && aObject.modelID.match( this.NAME_REG_EX ) )
+		if( aObject.modelID != undefined && aObject.modelID.match( this.NAME_REG_EX ) != null )
 			name = aObject;
 
-		if( aObject.class === 'Rect' )
+		if( aObject.className === 'Rect' )
 			rect = aObject;
 	}
 	
@@ -368,7 +722,7 @@ CanvasORMObj.prototype.editName = function( _id, _value ){
 		
 		for( var ref in objects ){
 			var aObject = objects[ref];
-			if( aObject.class != undefined && aObject.class === 'Text' && !aObject.modelID.match( this.NAME_REG_EX ) ){
+			if( aObject.className != undefined && aObject.className === 'Text' && aObject.modelID.match( this.NAME_REG_EX ) == null ){
 				template = this.nameAndPKTemplate;
 				break
 			}
@@ -392,19 +746,22 @@ CanvasORMObj.prototype.editName = function( _id, _value ){
 		newAction.value.objects[objID] = {
 		    "id": _id + "/objects/" + objID,
 		    "modelID": visualModel.modelID + '/name',
-		    "class": "Text",
+		    "parentID" : _id, 
+		    "type" : "name",
+		    "className": "Text",
 		    "attr": template,
 		    "functions": {},
 		    "links": { "empty":"" }
 		};
-		
 	} else {
 		name.attr.text = _value;
-		delete name.attr.visible
-		master.canvas.layer.find( '#' + name.id )[0].show();
+		name.attr.x = this.nameTempalte.x
+		name.attr.width = 'auto';
+		delete name.attr.visible;
+		master.canvas.stage.find( '#' + name.id )[0].show();
 	}
 	
-	return [ newAction ]
+	return [ newAction ];
 }
 
 /*	findGroupByModelID: takes a model ID and returns the visualModel object
@@ -451,26 +808,26 @@ CanvasORMObj.prototype.createSyncAction = function( _id ){
 	}
 	
 	//get the canvas object associated with the _id, throws and error if not found
-	var group = master.canvas.layer.find( '#' + _id );
+	var group = master.canvas.stage.find( '#' + _id );
 	if( group.length === 0 ){
 		throwError( 'canvas.orm_obj.js', 'createSyncAction', 'Passed ID must exsist on the canvas'  )
 	}
 	group = group[0];
 	
+	var groupAttr = cleanObjectforJSON( group.getAttrs() );
+	if( typeof groupAttr.disabled !== 'undefined' )
+		delete groupAttr.disabled;
+		
+	var tempObj = cloneJSON( visualModel );
+	tempObj.attr = groupAttr;
+	tempObj.objects = {};
+	
 	//Creates visual action at the group level
 	var visualActions =	{	
-			"objectID" : visualModel.id,
-			"commandType" : "update",
-			"value" : {
-			    "type": visualModel.type,
-			    "id": visualModel.id,
-			    "modelID": visualModel.modelID,
-			    "selectedBy": visualModel.selectedBy,
-			    "attr": cleanObjectforJSON( group.getAttrs() ),
-			    "functions": visualModel.functions,
-			    "objects": {}
-			}
-		}
+		"objectID" : visualModel.id,
+		"commandType" : "update",
+		"value" : tempObj
+	}
 	
 	//Extracts the objects object from the action for eaiser referance
 	var objects = visualActions.value.objects;
@@ -486,8 +843,10 @@ CanvasORMObj.prototype.createSyncAction = function( _id ){
 			} else {	
 				objects[ getPointerUUID( child.id() ) ] = {
 				    "id": child.id(),
+				    "type" : visualChild.type,
 				    "modelID": visualChild.modelID,
-				    "class": child.getClassName(),
+				    "parentID" : visualActions.objectID, 
+				    "className": child.getClassName(),
 				    "attr": cleanObjectforJSON( child.getAttrs() ),
 				    "functions": ( visualChild.functions == undefined ) ? '' : visualChild.functions,
 				    "links": visualChild.links
@@ -496,7 +855,188 @@ CanvasORMObj.prototype.createSyncAction = function( _id ){
 		}
 	});
 	
+	/*	Loop through each child ofthe group that has an id. For each object
+	 * 	add it to the actions objects object
+	 */
+	var children = master.canvas.stage.find( '.' + _id ).getChildren().each( function( child, n ){
+		if( child.id() != undefined ){
+			var visualChild = getObjPointer( master.model, child.id() );
+			if( visualChild == undefined ){
+				console.log( "There is a canvas object in the group id '" + _id + "' with the ID '" + child.id() + "' but is not in the VisualModel. This was NOT be added to the sync." )
+			} else {	
+				objects[ getPointerUUID( child.id() ) ] = {
+				    "id": child.id(),
+				    "type" : visualChild.type,
+				    "modelID": visualChild.modelID,
+				    "parentID" : visualActions.objectID, 
+				    "className": child.getClassName(),
+				    "attr": cleanObjectforJSON( child.getAttrs() ),
+				    "outside" : true,
+				    "functions": ( visualChild.functions == undefined ) ? '' : visualChild.functions,
+				    "links": visualChild.links
+				}
+			}	
+		}
+	});
+	
 	return visualActions;
+}
+
+CanvasORMObj.prototype.massAddOneObject = function( _type, name, _modelID, _totalXY ){
+	var aVisualAction = master.canvas.ormObj.addObj( _type, _modelID, _totalXY.x, _totalXY.y );
+	
+	var rectAction = null;
+	for( var ref in aVisualAction['value']['objects'] ){
+		rectAction = aVisualAction['value']['objects'][ ref ];
+		break;
+	}
+	
+	var y = rectAction.attr.height;
+	var x = rectAction.attr.width;
+	
+	_totalXY.y += y + 10;
+	if( ( _totalXY.y + y ) > master.canvas.height ){
+		_totalXY.y = 10;
+		_totalXY.y += x + 10;
+	}
+	
+	var objID = uuid.v4();
+	
+	var nameAttr = cloneJSON( master.canvas.ormObj.nameTempalte );
+	nameAttr.text = name;
+	nameAttr.id = aVisualAction['value'].id + "/objects/" + objID;
+	nameAttr.y *= rectAction.attr.height;
+	
+	var canvasName = new Kinetic.Text( nameAttr );
+	rectAction.attr.width = ( canvasName.getWidth() + 10 > rectAction.attr.width ) ? canvasName.getWidth() + 10 : rectAction.attr.width; 
+	
+	aVisualAction.value.objects[objID] = {
+	    "id": aVisualAction.value.id + "/objects/" + objID,
+	    "modelID": aVisualAction['value'].modelID + '/name',
+	    "parentID" : aVisualAction.value.id,
+	    "className": "Text",
+	    "attr": nameAttr,
+	    "type": "name",
+	    "functions": {},
+	    "links": {"empty":""}
+	}
+	
+	return aVisualAction;
+}
+
+CanvasORMObj.prototype.deleteObj = function( _id, _integrateWith ){
+	var aVisualGroup = getObjPointer( master.model, _id );	
+	if( aVisualGroup == undefined ){
+		throwError( 'canvas.orm_obj.js', 'deleteObj', 'The passed _id, ' + _id + ', does not exist in the visual model' );
+	}
+	
+	if( typeof _integrateWith !== 'object' ){
+		_integrateWith = {};
+	}
+	
+	actions = [];
+	 
+	actions[ actions.length ] = { 
+		"objectID" : _id,
+		"commandType" : "delete",
+		"value": null
+	}
+	
+	for( var objRef in aVisualGroup.objects ){
+	if( ref !== 'empty' ){
+		var aVisualObject = aVisualGroup.objects[ objRef ];
+		
+		for( var ref in aVisualObject.links ){
+		if( ref !== 'empty' ){
+			if( typeof _integrateWith[ aVisualObject.links[ ref ] ] === 'undefined' ){
+				var aVisualLink = getObjPointer( master.model, aVisualObject.links[ ref ] );	
+				if( aVisualLink == undefined ){
+					throwError( 'canvas.orm_obj.js', 'deleteObj', 'The link id, ' + aVisualObject.links[ ref ] + ', does not exist in the visual model' );
+				}
+				aVisualLink = cloneJSON( aVisualLink );
+				
+				_integrateWith[ aVisualLink.id ] = aVisualLink;
+			} else {
+				aVisualLink = _integrateWith[ aVisualObject.links[ ref ] ];
+			}
+			
+			if( aVisualGroup.type === 'predicate' || master.rule.ruleTypes[ aVisualGroup.type ] === true ){
+				if( aVisualGroup.type === 'predicate' ){
+					var aVisualLinkObj = getObjPointer( master.model, aVisualLink.zSide );	
+					if( aVisualLinkObj == undefined ){
+						throwError( 'canvas.orm_obj.js', 'deleteObj', 'The object id, ' + aVisualLink.zSide + ', does not exist in the visual model' );
+					}	
+				} else {
+					var aVisualLinkObj = getObjPointer( master.model, aVisualLink.aSide );	
+					if( aVisualLinkObj == undefined ){
+						throwError( 'canvas.orm_obj.js', 'deleteObj', 'The object id, ' + aVisualLink.aSide + ', does not exist in the visual model' );
+					}
+				}
+				
+				if( typeof _integrateWith[ aVisualLinkObj.parentID ] === 'undefined' ){
+					var aVisualLinkGroup = getObjPointer( master.model, aVisualLinkObj.parentID );	
+					if( aVisualLinkGroup == undefined ){
+						throwError( 'canvas.orm_obj.js', 'deleteObj', 'The visual group id, ' + aVisualLinkObj.parentID + ', does not exist in the visual model' );
+					}
+					aVisualLinkGroup = cloneJSON( aVisualLinkGroup );
+					
+					_integrateWith[ aVisualLinkGroup.id ] = aVisualLinkGroup;
+				} else {
+					aVisualLinkGroup = _integrateWith[ aVisualLinkObj.parentID ];
+				}
+				
+				aVisualLinkObjUUID = getPointerUUID( aVisualLinkObj.id );
+				delete aVisualLinkGroup.objects[ aVisualLinkObjUUID ].links[ ref ];
+				
+				actions[ actions.length ] = { 
+					"objectID" : aVisualLinkGroup.id,
+					"commandType" : "update",
+					"value": aVisualLinkGroup
+				}
+				
+				actions[ actions.length ] = { 
+					"objectID" : aVisualLink.id,
+					"commandType" : "delete",
+					"value": null
+				}
+			} else {
+				aVisualLink.zSide = "";
+				
+				actions[ actions.length ] = { 
+					"objectID" : aVisualLink.id,
+					"commandType" : "update",
+					"value": aVisualLink
+				}
+			}
+		}
+		}
+	}
+	}
+	
+	return actions;
+}
+
+CanvasORMObj.prototype.deleteOnKeypress = function(){
+	//Get all select objects ID's and place them into an array
+	var out = [];
+	for( var ref in Kinetic.isSelected ){
+		var group = Kinetic.isSelected[ ref ];
+		
+		var visualGroup = getObjPointer( master.model, group.id() );
+		
+		out[ out.length ] = visualGroup.modelID;
+	}
+	
+	if( out.length === 0 )
+		return;
+	
+	//Deselect the objects
+	deselect();
+	//Send the ID to be delete to deleteObj in ORMObj 
+	master.ormObj.deleteObj( out );
+	
+	//Reset cursor
+	document.body.style.cursor = 'default';
 }
 
 /*	toggleCreateListener: toggles on and off a listener for creating new objects.
@@ -510,8 +1050,17 @@ CanvasORMObj.prototype.toggleCreateListener = function( _icon ){
 		master.canvas.backRect.on('click.createListener touchstart.createListener', function(e){
 			master.ormObj.addObj( _icon );
 		});
+		
+		master.canvas.backRect.on('mouseover.createListener', function() {
+			document.body.style.cursor = 'copy';
+		});
+		
+		master.canvas.backRect.on('mouseout.createListener', function() {
+		document.body.style.cursor = 'default';
+  	});
 	} else {
 		master.canvas.backRect.off( '.createListener' );
+		document.body.style.cursor = 'default';
 	}
 		
 }

@@ -11,6 +11,6 @@ function criticalError(){
 	master.transaction.fbModel.once('value', function(data) {
 		master.model = data.val();
 		master.canvas.reset();
-		setInterval( closeBlockingAlert(), 1000 );		
+		setTimeout( closeBlockingAlert(), 1000 );		
 	});
 }

@@ -374,6 +374,9 @@ Transaction.prototype.setListeners = function(){
 	var modelObjects = this.fbModel.child( 'TransactionLog' );
 	modelObjects.on( 'child_added', function( childSnapshot ){
 		cloudInsertNoVersion( master.model.TransactionLog, childSnapshot, false );
+		var value = childSnapshot.val();
+		master.undo.checkRemoteTransactionAgainstUndo( value );
+		
 	});
 	modelObjects.on( 'child_changed', function( childSnapshot ){
 		cloudUpdateNoVersion( master.model.TransactionLog, childSnapshot, false );
@@ -386,19 +389,19 @@ Transaction.prototype.setListeners = function(){
 	var modelObjects = this.fbModel.child( 'loaded' );
 	modelObjects.on( 'value', function( data ){
 		cloudUpdateNoVersion( master.model, data, false );
-		if( data.val() == true ){
+		if( data.val() === true ){
 			//Add startUID
 			data.ref().child( 'loaded' );
 			modelObjects.off( 'value' );
 			
 			var uiOpen = function(){
-				if( master.canvas == null ){
-					setInterval( uiOpen, 500 );
+				if( master.canvas == undefined ){
+					setTimeout( uiOpen, 500 );
 				} else {
 					master.canvas.reset( function(){
 						closeBlockingAlert();	
 					});
-				}		
+				}
 			}
 			
 			uiOpen();

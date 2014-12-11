@@ -24,7 +24,7 @@ function Chat( _fbModelRef, _fbToken, _userName ){
 	//Authenticate the user
 	this.fbChat.auth(_fbToken, function(error, result) {
 		if(error) {
-			openBlockingAlert( 'Could not start the application. Please try again latter.' );
+			openBlockingAlert( 'Could not authenicate you. Please try again latter.' );
 			throwError( 'index', 'Start Up', 'Firebase chat failed to start', true );
 		}
 	});
